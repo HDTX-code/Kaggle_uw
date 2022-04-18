@@ -1,3 +1,6 @@
 *.png
 *.jpg
 uw-madison-gi-tract-image-segmentation
+*.DS_Store
+.empty
+*.csv

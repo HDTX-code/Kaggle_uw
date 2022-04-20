@@ -6,3 +6,4 @@
 .empty
 *.csv
 .ipynb_checkpoints
+train

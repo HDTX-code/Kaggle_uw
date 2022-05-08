@@ -8,7 +8,7 @@ from torch import optim
 from torch.utils.data import DataLoader
 
 from nets import Unet, get_lr_scheduler, set_optimizer_lr
-from utils import unetDataset, fit_one_epoch, LossHistory
+from utils import UNetDataset, fit_one_epoch, LossHistory
 
 
 def go_train(args):
@@ -39,10 +39,10 @@ def go_train(args):
 
     # 生成dataset
     train_csv = pd.read_csv(args.train_csv_path)
-    train_dataset = unetDataset(train_csv, args.num_classes, [args.h, args.w])
+    train_dataset = UNetDataset(train_csv, args.num_classes, [args.h, args.w])
     if args.val_csv_path is not None:
         val_csv = pd.read_csv(args.val_csv_path)
-        val_dataset = unetDataset(val_csv, args.num_classes, [args.h, args.w])
+        val_dataset = UNetDataset(val_csv, args.num_classes, [args.h, args.w])
     else:
         val_dataset = None
 
@@ -52,8 +52,8 @@ def go_train(args):
     nbs = 16
     lr_limit_max = 1e-4 if args.optimizer_type == 'adam' else 1e-1
     lr_limit_min = 1e-4 if args.optimizer_type == 'adam' else 5e-4
-    Init_lr_fit = min(max(args.batch_size / nbs * args.Init_lr, lr_limit_min), lr_limit_max)
-    Min_lr_fit = min(max(args.batch_size / nbs * args.Init_lr * 0.01, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
+    Init_lr_fit = min(max(args.UnFreeze_batch_size / nbs * args.Init_lr, lr_limit_min), lr_limit_max)
+    Min_lr_fit = min(max(args.UnFreeze_batch_size / nbs * args.Init_lr * 0.01, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
     # ---------------------------------------#
     #   根据optimizer_type选择优化器
     # ---------------------------------------#
@@ -72,12 +72,12 @@ def go_train(args):
         # ---------------------------------------#
         #   获得学习率下降的公式
         # ---------------------------------------#
-        lr_scheduler_func_Freeze = get_lr_scheduler(args.lr_decay_type, Init_lr_fit, Min_lr_fit, args.Freeze_Epoch)
+        lr_scheduler_func_Freeze = get_lr_scheduler(args.lr_decay_type, Init_lr_fit, Min_lr_fit, args.Freeze_epoch)
         print("-----------------Start Freeze Train-----------------")
 
         gen = DataLoader(train_dataset, shuffle=True, batch_size=args.Freeze_batch_size,
                          num_workers=args.num_workers)
-        if args.val_csv is not None:
+        if args.val_csv_path is not None:
             gen_val = DataLoader(val_dataset, shuffle=True, batch_size=args.Freeze_batch_size,
                                  num_workers=args.num_workers)
         else:
@@ -93,10 +93,10 @@ def go_train(args):
                           gen=gen,
                           gen_val=gen_val,
                           save_dir=args.save_dir,
-                          cls_weights=args.cls_weights,
+                          cls_weights=np.ones([args.num_classes], np.float32),
                           device=device,
                           loss_history=loss_history,
-                          num_classes=args.numclasses)
+                          num_classes=args.num_classes)
     # ---------------------------------------#
     #   开始冻结训练
     # ---------------------------------------#
@@ -123,7 +123,7 @@ def go_train(args):
                       gen=gen,
                       gen_val=gen_val,
                       save_dir=args.save_dir,
-                      cls_weights=args.cls_weights,
+                      cls_weights=np.ones([args.num_classes], np.float32),
                       device=device,
                       loss_history=loss_history,
                       num_classes=args.num_classes)
@@ -132,12 +132,12 @@ def go_train(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='训练参数设置')
     parser.add_argument('--backbone', type=str, default='resnet50', help='特征网络选择，默认resnet50')
-    parser.add_argument('--num_classes', type=int, required=True, help='种类数量')
+    parser.add_argument('--num_classes', type=int, default=4, help='种类数量')
     parser.add_argument('--save_dir', type=str, default="./logs", help='存储文件夹位置')
     parser.add_argument('--model_path', type=str, default="", help='模型参数位置')
     parser.add_argument('--w', type=int, default=512, help='宽')
     parser.add_argument('--h', type=int, default=512, help='高')
-    parser.add_argument('--train_csv_path', type=str, required=True, help="训练csv")
+    parser.add_argument('--train_csv_path', type=str, default="./data_csv.csv", help="训练csv")
     parser.add_argument('--val_csv_path', type=str, default=None, help="验证csv")
     parser.add_argument('--optimizer_type', type=str, default='adam', help="优化器")
     parser.add_argument('--Freeze_batch_size', type=int, default=18, help="冻结训练batch_size")
@@ -147,6 +147,8 @@ if __name__ == '__main__':
     parser.add_argument('--Init_lr', type=float, default=1e-4, help="最大学习率")
     parser.add_argument('--momentum', type=float, default=0.9, help="优化器动量")
     parser.add_argument('--weight_decay', type=float, default=0, help="权值衰减，使用adam时建议为0")
+    parser.add_argument('--Freeze_epoch', type=int, default=3, help="冻结训练轮次")
+    parser.add_argument('--UnFreeze_epoch', type=int, default=6, help="解冻训练轮次")
     args = parser.parse_args()
 
     go_train(args)

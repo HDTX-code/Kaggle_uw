@@ -7,3 +7,4 @@
 *.csv
 .ipynb_checkpoints
 train
+logs

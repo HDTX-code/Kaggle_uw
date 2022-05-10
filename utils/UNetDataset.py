@@ -15,14 +15,12 @@ class UNetDataset(Dataset):
 
     def __getitem__(self, item):
         pic_train = cv2.imread(self.csv.loc[item, "path"])
-        pic_label = self.get_label(pic_train, self.csv.loc[item, 'segmentation_s'],
-                                   self.csv.loc[item, 'segmentation_sb'],
-                                   self.csv.loc[item, 'segmentation_lb'])
-        pic_label[pic_label >= self.num_classes] = self.num_classes
+        pic_label = cv2.imread(self.csv.loc[item, "label_path"], cv2.IMREAD_GRAYSCALE)
 
-        pic_train = cv2.resize(pic_train, self.input_shape)
+        pic_train, pic_label = self.get_random_data(pic_train, pic_label, self.input_shape)
+
+        pic_label[pic_label >= self.num_classes] = self.num_classes
         pic_train = np.transpose(cv2.cvtColor(pic_train, cv2.COLOR_BGR2RGB), [2, 0, 1])
-        pic_label = cv2.resize(pic_label, self.input_shape)
 
         # -------------------------------------------------------#
         #   转化成one_hot的形式
@@ -34,50 +32,67 @@ class UNetDataset(Dataset):
         return pic_train, pic_label, seg_labels
 
     @staticmethod
-    def get_x_new(x_raw):
-        if x_raw != "0":
-            x_raw = x_raw.split()
-            for item in range(len(x_raw)):
-                x_raw[item] = int(x_raw[item])
-            x_raw_1 = x_raw[::2]
-            x_raw_2 = x_raw[1::2]
-            x_new = []
-            for item in range(len(x_raw_1)):
-                for item_index in range(x_raw_2[item]):
-                    x_new.append(x_raw_1[item] + item_index)
-        else:
-            x_new = [0]
-        return x_new
+    def rand(a=0, b=1):
+        return np.random.rand() * (b - a) + a
 
     @staticmethod
-    def get_new_where(x, h):
-        if x != [0]:
-            y = np.zeros([len(x), 2])
-            for i in range(len(x)):
-                y[i, 0] = x[i] // h
-                y[i, 1] = x[i] % h
-            return y
+    def cvtColor(image):
+        if len(np.shape(image)) == 3 and np.shape(image)[2] == 3:
+            return image
         else:
-            return None
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+            return image
 
     @staticmethod
-    def gamma_trans(img, gamma):
-        gamma_table = [np.power(x / 255.0, gamma) * 255.0 for x in range(256)]
-        gamma_table = np.round(np.array(gamma_table)).astype(np.uint8)
-        return cv2.LUT(img, gamma_table)
+    def ImageNew(src):
+        blur_img = cv2.GaussianBlur(src, (0, 0), 5)
+        usm = cv2.addWeighted(src, 1.5, blur_img, -0.5, 0)
+        result = usm
+        return result
 
-    def get_label(self, image, segmentation_s, segmentation_sb, segmentation_lb):
-        segmentation_lb = self.get_new_where(self.get_x_new(segmentation_lb), image.shape[0])
-        segmentation_sb = self.get_new_where(self.get_x_new(segmentation_sb), image.shape[0])
-        segmentation_s = self.get_new_where(self.get_x_new(segmentation_s), image.shape[0])
-        transparent = np.zeros([image.shape[0], image.shape[0], 1], dtype=image.dtype)
-        if segmentation_lb is not None:
-            for j in range(segmentation_lb.shape[0]):
-                transparent[int(segmentation_lb[j, 0]), int(segmentation_lb[j, 1]), 0] = 1
-        if segmentation_sb is not None:
-            for j in range(segmentation_sb.shape[0]):
-                transparent[int(segmentation_sb[j, 0]), int(segmentation_sb[j, 1]), 0] = 2
-        if segmentation_s is not None:
-            for j in range(segmentation_s.shape[0]):
-                transparent[int(segmentation_s[j, 0]), int(segmentation_s[j, 1]), 0] = 3
-        return transparent
+    @staticmethod
+    def Image_GaussianBlur(img):
+        kernel_size = (5, 5)
+        sigma = 1.5
+        img = cv2.GaussianBlur(img, kernel_size, sigma)
+        return img
+
+    def get_random_data(self, image, label, input_shape, jitter=.3, random=True):
+        image = self.cvtColor(image)
+        h, w = image.shape[0], image.shape[1]
+        ih, iw = input_shape
+        if random:
+            #   生成随机数，scale负责随机缩放、锐化、高斯模糊，scale flip 负责上下左右旋转
+            scale = self.rand(0, 1)
+            scale_flip = self.rand(0, 1)
+            #   随机缩放、锐化、高斯模糊
+            if scale < 0.25:
+                new_ar = iw / ih * self.rand(1 - jitter, 1 + jitter) / self.rand(1 - jitter, 1 + jitter)
+                if new_ar < 1:
+                    nh = int(scale * h)
+                    nw = int(nh * new_ar)
+                else:
+                    nw = int(scale * w)
+                    nh = int(nw / new_ar)
+                image = cv2.resize(image, (nw, nh), cv2.INTER_CUBIC)
+                label = cv2.resize(label, (nw, nh), cv2.INTER_NEAREST)
+            elif 0.25 <= scale < 0.5:
+                image = self.Image_GaussianBlur(image)
+            elif 0.5 <= scale < 0.75:
+                image = self.ImageNew(image)
+
+            #   随机旋转
+            if scale_flip < 0.25:
+                image = cv2.flip(image, -1)
+                label = cv2.flip(label, -1)
+            elif 0.25 <= scale_flip < 0.5:
+                image = cv2.flip(image, 0)
+                label = cv2.flip(label, 0)
+            elif 0.5 <= scale_flip < 0.75:
+                image = cv2.flip(image, 1)
+                label = cv2.flip(label, 1)
+
+        #   将图像多余的部分加上灰条
+        image = cv2.resize(image, (iw, ih), cv2.INTER_CUBIC)
+        label = cv2.resize(label, (iw, ih), cv2.INTER_NEAREST)
+        return image, label

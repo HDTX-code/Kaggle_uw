@@ -105,7 +105,7 @@ def go_train(args):
     # ---------------------------------------#
     #   获得学习率下降的公式
     # ---------------------------------------#
-    lr_scheduler_func_UnFreeze = get_lr_scheduler(args.lr_decay_type, Init_lr_fit, Min_lr_fit, args.UnFreeze_Epoch)
+    lr_scheduler_func_UnFreeze = get_lr_scheduler(args.lr_decay_type, Init_lr_fit, Min_lr_fit, args.UnFreeze_epoch)
     gen = DataLoader(train_dataset, shuffle=True, batch_size=args.UnFreeze_batch_size,
                      num_workers=args.num_workers)
     if args.val_csv is not None:

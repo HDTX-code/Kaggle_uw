@@ -59,9 +59,10 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
         with torch.no_grad():
             for iteration, (pic_train, pic_label, seg_labels) in enumerate(gen_val):
                 weights = torch.from_numpy(cls_weights).type(torch.FloatTensor).to(device)
-                pic_train = torch.from_numpy(pic_train).type(torch.FloatTensor).to(device)
-                pic_label = torch.from_numpy(pic_label).long().to(device)
-                seg_labels = torch.from_numpy(seg_labels).type(torch.FloatTensor).to(device)
+                pic_train = pic_train.type(torch.FloatTensor).to(device)
+                pic_label = pic_label.long().to(device)
+                seg_labels = seg_labels.type(torch.FloatTensor).to(device)
+
                 outputs = model(pic_train)
                 if focal_loss:
                     loss = Focal_Loss(outputs, pic_label, weights, num_classes=num_classes)

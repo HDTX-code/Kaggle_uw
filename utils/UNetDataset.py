@@ -17,7 +17,7 @@ class UNetDataset(Dataset):
         pic_train = cv2.imread(self.csv.loc[item, "path"])
         pic_label = cv2.imread(self.csv.loc[item, "label_path"], cv2.IMREAD_GRAYSCALE)
 
-        pic_train, pic_label = self.get_random_data(pic_train, pic_label, self.input_shape)
+        pic_train, pic_label = self.get_random_data(pic_train, pic_label, self.input_shape, random=False)
 
         pic_label[pic_label >= self.num_classes] = self.num_classes
         pic_train = np.transpose(cv2.cvtColor(pic_train, cv2.COLOR_BGR2RGB), [2, 0, 1])
@@ -93,6 +93,10 @@ class UNetDataset(Dataset):
                 label = cv2.flip(label, 1)
 
         #   将图像多余的部分加上灰条
-        image = cv2.resize(image, (iw, ih), cv2.INTER_CUBIC)
-        label = cv2.resize(label, (iw, ih), cv2.INTER_NEAREST)
+        if (image == 0).all():
+            image = cv2.resize(image, (iw, ih))
+            label = cv2.resize(label, (iw, ih))
+        else:
+            image = cv2.resize(image, (iw, ih), cv2.INTER_CUBIC)
+            label = cv2.resize(label, (iw, ih), cv2.INTER_NEAREST)
         return image, label

@@ -138,7 +138,7 @@ if __name__ == '__main__':
     parser.add_argument('--w', type=int, default=512, help='宽')
     parser.add_argument('--h', type=int, default=512, help='高')
     parser.add_argument('--train_csv_path', type=str, default="./data_csv.csv", help="训练csv")
-    parser.add_argument('--val_csv_path', type=str, default=None, help="验证csv")
+    parser.add_argument('--val_csv_path', type=str, required=True, help="验证csv")
     parser.add_argument('--optimizer_type', type=str, default='adam', help="优化器")
     parser.add_argument('--Freeze_batch_size', type=int, default=18, help="冻结训练batch_size")
     parser.add_argument('--UnFreeze_batch_size', type=int, default=8, help="解冻训练batch_size")

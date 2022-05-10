@@ -11,8 +11,8 @@ from utils.utils_metrics import f_score
 def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
                   epoch_all, gen, gen_val, save_dir, cls_weights, device,
                   loss_history, focal_loss=True, dice_loss=True):
+    print('Start Train')
     with tqdm(total=len(gen), desc=f'Epoch {epoch_now + 1}/{epoch_all}', postfix=dict, mininterval=0.3) as pbar_train:
-        print('Start Train')
         total_loss = 0
         total_f_score = 0
         model.train().to(device)
@@ -50,9 +50,9 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
                                       'lr': get_lr(optimizer)})
             pbar_train.update(1)
 
+    print('Finish Train')
+    print('Start Validation')
     with tqdm(total=len(gen_val), desc=f'Epoch {epoch_now + 1}/{epoch_all}', postfix=dict, mininterval=0.3) as pbar_val:
-        print('Finish Train')
-        print('Start Validation')
         val_loss = 0
         val_f_score = 0
         model.eval().to(device)

@@ -15,14 +15,14 @@ class UNetDataset(Dataset):
 
     def __getitem__(self, item):
         pic_train = cv2.imread(self.csv.loc[item, "path"])
-        pic_label = self.get_label(pic_train, self.csv.loc[item, 'segmentation_s'], self.csv.loc[item, 'segmentation_sb'],
+        pic_label = self.get_label(pic_train, self.csv.loc[item, 'segmentation_s'],
+                                   self.csv.loc[item, 'segmentation_sb'],
                                    self.csv.loc[item, 'segmentation_lb'])
         pic_label[pic_label >= self.num_classes] = self.num_classes
 
         pic_train = cv2.resize(pic_train, self.input_shape)
         pic_train = np.transpose(cv2.cvtColor(pic_train, cv2.COLOR_BGR2RGB), [2, 0, 1])
         pic_label = cv2.resize(pic_label, self.input_shape)
-
 
         # -------------------------------------------------------#
         #   转化成one_hot的形式

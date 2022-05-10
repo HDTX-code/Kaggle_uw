@@ -15,7 +15,7 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
         print('Start Train')
         total_loss = 0
         total_f_score = 0
-        model.train()
+        model.train().to(device)
         for iteration, (pic_train, pic_label, seg_labels) in enumerate(gen):
             with torch.no_grad():
                 weights = torch.from_numpy(cls_weights).type(torch.FloatTensor).to(device)
@@ -55,7 +55,7 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
         print('Start Validation')
         val_loss = 0
         val_f_score = 0
-        model.eval()
+        model.eval().to(device)
         with torch.no_grad():
             for iteration, (pic_train, pic_label, seg_labels) in enumerate(gen_val):
                 weights = torch.from_numpy(cls_weights).type(torch.FloatTensor).to(device)

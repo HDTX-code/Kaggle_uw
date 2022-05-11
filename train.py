@@ -17,6 +17,9 @@ def go_train(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     print("backbone = " + args.backbone)
+    print('cls_weights =', end='')
+    print(np.array(args.cls_weights, np.float32))
+    print('')
 
     # 检查保存文件夹是否存在
     if not os.path.exists(args.save_dir):
@@ -93,7 +96,7 @@ def go_train(args):
                           gen=gen,
                           gen_val=gen_val,
                           save_dir=args.save_dir,
-                          cls_weights=np.ones([args.num_classes], np.float32) if args.cls_weights is None else args.cls_weights,
+                          cls_weights=np.ones([args.num_classes], np.float32) if args.cls_weights is None else np.array(args.cls_weights, np.float32),
                           device=device,
                           loss_history=loss_history,
                           num_classes=args.num_classes)
@@ -123,7 +126,7 @@ def go_train(args):
                       gen=gen,
                       gen_val=gen_val,
                       save_dir=args.save_dir,
-                      cls_weights=np.ones([args.num_classes], np.float32) if args.cls_weights is None else args.cls_weights,
+                      cls_weights=np.ones([args.num_classes], np.float32) if args.cls_weights is None else np.array(args.cls_weights, np.float32),
                       device=device,
                       loss_history=loss_history,
                       num_classes=args.num_classes)

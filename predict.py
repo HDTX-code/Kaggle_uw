@@ -25,7 +25,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_classes', type=int, default=4, help='种类数量 + 1')
     parser.add_argument('--w', type=int, default=512, help='宽')
     parser.add_argument('--h', type=int, default=512, help='高')
-    parser.add_argument('--mix_type', type=int, default=0, help='原图与生成的图进行混合模式')
+    parser.add_argument('--mix_type', type=int, default=2, help='原图与生成的图进行混合模式')
     parser.add_argument('--pic_path', type=str, required=True, help='图片路径地址')
     parser.add_argument('--save_dir', type=str, default="./", help='存储文件夹位置')
     args = parser.parse_args()

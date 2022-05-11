@@ -93,7 +93,7 @@ def go_train(args):
                           gen=gen,
                           gen_val=gen_val,
                           save_dir=args.save_dir,
-                          cls_weights=np.ones([args.num_classes], np.float32),
+                          cls_weights=np.ones([args.num_classes], np.float32) if args.cls_weights is None else args.cls_weights,
                           device=device,
                           loss_history=loss_history,
                           num_classes=args.num_classes)
@@ -123,7 +123,7 @@ def go_train(args):
                       gen=gen,
                       gen_val=gen_val,
                       save_dir=args.save_dir,
-                      cls_weights=np.ones([args.num_classes], np.float32),
+                      cls_weights=np.ones([args.num_classes], np.float32) if args.cls_weights is None else args.cls_weights,
                       device=device,
                       loss_history=loss_history,
                       num_classes=args.num_classes)
@@ -149,6 +149,7 @@ if __name__ == '__main__':
     parser.add_argument('--weight_decay', type=float, default=0, help="权值衰减，使用adam时建议为0")
     parser.add_argument('--Freeze_epoch', type=int, default=3, help="冻结训练轮次")
     parser.add_argument('--UnFreeze_epoch', type=int, default=6, help="解冻训练轮次")
+    parser.add_argument('--cls_weights', nargs='+', type=float, default=None, help='交叉熵loss系数')
     args = parser.parse_args()
 
     go_train(args)

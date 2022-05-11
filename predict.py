@@ -1,16 +1,18 @@
 import argparse
 
+import cv2
 import torch
 from PIL import Image
 
 from unet import Unet
+import matplotlib.pyplot as plt
 
 
 def go_predict(args):
     print(torch.cuda.is_available())
     unet = Unet(args.model_path, args.num_classes, args.backbone, [args.w, args.h], torch.cuda.is_available())
     image = unet.detect_image(Image.open(args.pic_path), mix_type=0)
-    image.show()
+    plt.imshow(Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)))
 
 
 if __name__ == '__main__':

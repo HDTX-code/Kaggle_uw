@@ -1,6 +1,7 @@
 import argparse
 
 import cv2
+import numpy as np
 import torch
 from PIL import Image
 
@@ -12,7 +13,7 @@ def go_predict(args):
     print(torch.cuda.is_available())
     unet = Unet(args.model_path, args.num_classes, args.backbone, [args.w, args.h], torch.cuda.is_available())
     image = unet.detect_image(Image.open(args.pic_path), mix_type=0)
-    plt.imshow(Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)))
+    plt.imshow(cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2BGR))
 
 
 if __name__ == '__main__':

@@ -17,7 +17,7 @@ def go_train(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     print("backbone = " + args.backbone)
-    print('cls_weights =', end='')
+    print('cls_weights = ', end='')
     print(np.array(args.cls_weights, np.float32))
     print('')
 

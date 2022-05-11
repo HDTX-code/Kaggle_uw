@@ -10,7 +10,7 @@ from utils.utils_metrics import f_score
 
 def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
                   epoch_all, gen, gen_val, save_dir, cls_weights, device,
-                  loss_history, focal_loss=True, dice_loss=True):
+                  loss_history, focal_loss=True, dice_loss=False):
     print('Start Train')
     with tqdm(total=len(gen), desc=f'Epoch {epoch_now + 1}/{epoch_all}', postfix=dict, mininterval=0.3) as pbar_train:
         total_loss = 0

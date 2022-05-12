@@ -28,7 +28,7 @@
 #### Train_result
 
 + Total_Loss = 0.303,  Val_Loss = 0.318
-+ f_score = 0.759,  f_score_val = 0.744
++ f_score = 0.759,  f_score_val = 0.744（未去除背景类）
 
 #### Problem
 
@@ -41,3 +41,43 @@
 
 + 用各个类别（包括背景）的面积的倒数除以面积的倒数的总和作为交叉熵loss权重
 + 解决epoch_1里的预处理问题
+
+#### Train
+
++ Optimizer =  Adam
++ lr_decay_type = cos, max_lr = 1e-4, min_lr = 1e-6
++ Freeze_batch_size = 10,  UnFreeze_batch_size = 8
++ Freeze_epoch = 8, UnFreeze_epoch = 22
++ 256 * 256
++ val_per = 0.2, 随机选取
+
+#### Train_result
+
++ f_score = 0.351,  f_score_val = 0.347（未去除背景类）
+
+#### Problem
+
++ loss绝对值太小，在e-5量级
++ 添加权重以后，模型不再识别到全黑的区域，但仍然不准确，大多识别在边缘亮区
+
+### Epoch_3
+
+#### Change
+
++ 增加了数据增强模块，包括随机缩放，旋转，锐化，模糊
++ 进入模型训练时，对图像添加除以最大值的0-1化操作，缩小绝对误差，避免识别集中在亮区
+
+#### Train
+
++ Optimizer =  Adam
++ lr_decay_type = cos, max_lr = 1e-4, min_lr = 1e-6
++ Freeze_batch_size = 10,  UnFreeze_batch_size = 8
++ Freeze_epoch = 0, UnFreeze_epoch = 24
++ 256 * 256
++ 使用Epoch_2的训练验证划分
+
+#### Problem
+
++ 需要更好的前期数据预处理
++ 对dice loss和f score去除掉背景类的影响，加到total loss里
++ 需要利用上更多的信息

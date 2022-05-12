@@ -31,7 +31,7 @@ class UNetDataset(Dataset):
         # -------------------------------------------------------#
         seg_labels = np.eye(self.num_classes + 1)[pic_label.reshape([-1])]
         seg_labels = seg_labels.reshape((int(self.input_shape[0]), int(self.input_shape[1]), self.num_classes + 1))
-        return pic_train, pic_label, seg_labels
+        return pic_train/255, pic_label, seg_labels
 
     @staticmethod
     def rand(a=0, b=1):
@@ -124,4 +124,4 @@ class UNetDataset(Dataset):
 
         #   将图像多余的部分加上灰条
         image, label = self.resize_cv2(image, label, input_shape)
-        return image/255, label
+        return image, label

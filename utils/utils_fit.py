@@ -91,16 +91,16 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
             print('Finish Validation')
             loss_history.append_loss(epoch_now + 1, total_loss / len(gen), val_loss / len(gen_val))
             print('Epoch:' + str(epoch_now + 1) + '/' + str(epoch_all))
-            print('Total Loss: %.3f || Val Loss: %.3f ' % (total_loss / len(gen), val_loss / len(gen_val)))
+            print('Total Loss: %.6f || Val Loss: %.6f ' % (total_loss / len(gen), val_loss / len(gen_val)))
             if ((epoch_now + 1) % 3 == 0 or epoch_now + 1 == epoch_all) and epoch_now >= epoch_Freeze:
-                torch.save(model.state_dict(), os.path.join(save_dir, 'ep%03d-f_loss%.3f-val_f_loss%.3f.pth' % (
+                torch.save(model.state_dict(), os.path.join(save_dir, 'ep%03d-f_score%.3f-val_f_score%.3f.pth' % (
                     (epoch_now + 1), total_f_score / len(gen), val_f_score / len(gen_val))))
     else:
         with torch.no_grad():
             print('Finish Validation')
             loss_history.append_loss(epoch_now + 1, total_loss / len(gen), 0)
             print('Epoch:' + str(epoch_now + 1) + '/' + str(epoch_all))
-            print('Total Loss: %.3f' % (total_loss / len(gen)))
+            print('Total Loss: %.6f' % (total_loss / len(gen)))
             if ((epoch_now + 1) % 3 == 0 or epoch_now + 1 == epoch_all) and epoch_now >= epoch_Freeze:
-                torch.save(model.state_dict(), os.path.join(save_dir, 'ep%03d-f_loss%.3f.pth' % (
+                torch.save(model.state_dict(), os.path.join(save_dir, 'ep%03d-f_score%.3f.pth' % (
                     (epoch_now + 1), total_f_score / len(gen))))

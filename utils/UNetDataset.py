@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 from torch.utils.data.dataset import Dataset
 
+from utils import resize_cv2
+
 
 class UNetDataset(Dataset):
     def __init__(self, csv, num_classes, input_shape):
@@ -17,7 +19,7 @@ class UNetDataset(Dataset):
         pic_train = cv2.imread(self.csv.loc[item, "path"])
         pic_label = cv2.imread(self.csv.loc[item, "label_path"], cv2.IMREAD_GRAYSCALE)
 
-        pic_train, pic_label = self.get_random_data(pic_train, pic_label, self.input_shape, random=False)
+        pic_train, pic_label = self.get_random_data(pic_train, pic_label, self.input_shape, random=True)
 
         pic_label[pic_label >= self.num_classes] = self.num_classes
         pic_train = np.transpose(cv2.cvtColor(pic_train, cv2.COLOR_BGR2RGB), [2, 0, 1])
@@ -59,23 +61,23 @@ class UNetDataset(Dataset):
 
     def get_random_data(self, image, label, input_shape, jitter=.3, random=True):
         image = self.cvtColor(image)
-        h, w = image.shape[0], image.shape[1]
-        ih, iw = input_shape
+        w, h = image.shape[0], image.shape[1]
+        iw, ih = input_shape
         if random:
             #   生成随机数，scale负责随机缩放、锐化、高斯模糊，scale flip 负责上下左右旋转
             scale = self.rand(0, 1)
             scale_flip = self.rand(0, 1)
             #   随机缩放、锐化、高斯模糊
             if scale < 0.25:
-                new_ar = iw / ih * self.rand(1 - jitter, 1 + jitter) / self.rand(1 - jitter, 1 + jitter)
-                if new_ar < 1:
-                    nh = int(scale * h)
-                    nw = int(nh * new_ar)
+                new_ar = iw / ih * self.rand(1, 2) / self.rand(1, 2)
+                nh = h
+                nw = int(h * new_ar)
+                if (image == 0).all():
+                    image = cv2.resize(image, (nw, nh))
+                    label = cv2.resize(label, (nw, nh))
                 else:
-                    nw = int(scale * w)
-                    nh = int(nw / new_ar)
-                image = cv2.resize(image, (nw, nh), cv2.INTER_CUBIC)
-                label = cv2.resize(label, (nw, nh), cv2.INTER_NEAREST)
+                    image = cv2.resize(image, (nw, nh), cv2.INTER_CUBIC)
+                    label = cv2.resize(label, (nw, nh), cv2.INTER_NEAREST)
             elif 0.25 <= scale < 0.5:
                 image = self.Image_GaussianBlur(image)
             elif 0.5 <= scale < 0.75:
@@ -93,10 +95,5 @@ class UNetDataset(Dataset):
                 label = cv2.flip(label, 1)
 
         #   将图像多余的部分加上灰条
-        if (image == 0).all():
-            image = cv2.resize(image, (iw, ih))
-            label = cv2.resize(label, (iw, ih))
-        else:
-            image = cv2.resize(image, (iw, ih), cv2.INTER_CUBIC)
-            label = cv2.resize(label, (iw, ih), cv2.INTER_NEAREST)
+        image, label = resize_cv2(image, label, input_shape)
         return image, label

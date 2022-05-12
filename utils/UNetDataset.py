@@ -1,8 +1,8 @@
+import copy
+
 import cv2
 import numpy as np
 from torch.utils.data.dataset import Dataset
-
-from utils import resize_cv2
 
 
 class UNetDataset(Dataset):
@@ -59,6 +59,34 @@ class UNetDataset(Dataset):
         img = cv2.GaussianBlur(img, kernel_size, sigma)
         return img
 
+    @staticmethod
+    def resize_cv2(image, label, input_size):
+        iw, ih = input_size
+        h, w = image.shape[:2]
+        image_mask = np.ones([iw, ih, 3], dtype=image.dtype) * 128
+        label_mask = np.zeros([iw, ih], dtype=label.dtype)
+        if iw / ih < w / h:
+            nw = copy.copy(iw)
+            nh = int(h / w * nw)
+            mask = 1
+        else:
+            nh = ih
+            nw = int(w / h * nh)
+            mask = 0
+        if (image == 0).all():
+            image = cv2.resize(image, (nw, nh))
+            label = cv2.resize(label, (nw, nh))
+        else:
+            image = cv2.resize(image, (nw, nh), cv2.INTER_CUBIC)
+            label = cv2.resize(label, (nw, nh), cv2.INTER_NEAREST)
+        if mask == 1:
+            image_mask[int((ih - nh) / 2):int((ih - nh) / 2) + nh, :, :] = image
+            label_mask[int((ih - nh) / 2):int((ih - nh) / 2) + nh, :] = label
+        else:
+            image_mask[:, int((iw - nw) / 2):int((iw - nw) / 2) + nw, :] = image
+            label_mask[:, int((iw - nw) / 2):int((iw - nw) / 2) + nw] = label
+        return image_mask, label_mask
+
     def get_random_data(self, image, label, input_shape, jitter=.3, random=True):
         image = self.cvtColor(image)
         w, h = image.shape[0], image.shape[1]
@@ -95,5 +123,5 @@ class UNetDataset(Dataset):
                 label = cv2.flip(label, 1)
 
         #   将图像多余的部分加上灰条
-        image, label = resize_cv2(image, label, input_shape)
+        image, label = self.resize_cv2(image, label, input_shape)
         return image, label

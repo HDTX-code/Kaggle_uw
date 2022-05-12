@@ -124,4 +124,4 @@ class UNetDataset(Dataset):
 
         #   将图像多余的部分加上灰条
         image, label = self.resize_cv2(image, label, input_shape)
-        return image, label
+        return image/255, label

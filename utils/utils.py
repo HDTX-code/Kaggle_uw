@@ -98,13 +98,15 @@ def load_model(model, model_path):
     model_dict = model.state_dict()
     pretrained_dict = torch.load(model_path, map_location=device)
     a = {}
+    no_load = 0
     for k, v in pretrained_dict.items():
         try:
             if np.shape(model_dict[k]) == np.shape(v):
                 a[k] = v
         except:
-            pass
+            no_load += 1
     model_dict.update(a)
     model.load_state_dict(model_dict)
+    print("No_load: {}".format(no_load))
     print('Finished!')
     return model

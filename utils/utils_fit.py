@@ -38,7 +38,7 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
                 # -------------------------------#
                 #   计算f_score
                 # -------------------------------#
-                _f_score = f_score(outputs[1:, ...], seg_labels[1:, ...])
+                _f_score = f_score(outputs[:, 1:, ...], seg_labels[..., 1:])
 
             loss.backward()
             optimizer.step()
@@ -77,7 +77,7 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
                     # -------------------------------#
                     #   计算f_score
                     # -------------------------------#
-                    _f_score = f_score(outputs[1:, ...], seg_labels[1:, ...])
+                    _f_score = f_score(outputs[:, 1:, ...], seg_labels[..., 1:])
 
                     val_loss += loss.item()
                     val_f_score += _f_score.item()

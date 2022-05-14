@@ -104,8 +104,8 @@ class Unet(object):
         self.net = unet(num_classes=self.num_classes, backbone=self.backbone)
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.net = load_model(self.net, self.model_path)
-        # self.net.load_state_dict(torch.load(self.model_path, map_location=device))
+        # self.net = load_model(self.net, self.model_path)
+        self.net.load_state_dict(torch.load(self.model_path, map_location=device))
         self.net = self.net.eval()
         print('{} model, and classes loaded.'.format(self.model_path))
         if not onnx:

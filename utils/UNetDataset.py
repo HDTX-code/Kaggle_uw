@@ -61,10 +61,10 @@ class UNetDataset(Dataset):
 
     @staticmethod
     def resize_cv2(image, label, input_size):
-        iw, ih = input_size
+        ih, iw = input_size
         h, w = image.shape[:2]
-        image_mask = np.ones([iw, ih, 3], dtype=image.dtype) * 128
-        label_mask = np.zeros([iw, ih], dtype=label.dtype)
+        image_mask = np.ones([ih, iw, 3], dtype=image.dtype) * 128
+        label_mask = np.zeros([ih, iw], dtype=label.dtype)
         if iw / ih < w / h:
             nw = copy.copy(iw)
             nh = int(h / w * nw)
@@ -89,8 +89,8 @@ class UNetDataset(Dataset):
 
     def get_random_data(self, image, label, input_shape, jitter=.3, random=True):
         image = self.cvtColor(image)
-        w, h = image.shape[0], image.shape[1]
-        iw, ih = input_shape
+        h, w = image.shape[0], image.shape[1]
+        ih, iw = input_shape
         if random:
             #   生成随机数，scale负责随机缩放、锐化、高斯模糊，scale flip 负责上下左右旋转
             scale = self.rand(0, 1)

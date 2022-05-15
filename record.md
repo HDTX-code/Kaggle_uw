@@ -82,3 +82,37 @@
 + 对dice loss和f score去除掉背景类的影响，加到total loss里
 + 需要利用上更多的信息
 + 寻找医疗影像的Unet模型预训练权重（现在还是用的voc数据集预训练的权重）
+
+## V2
+
+### Epoch_1
+
+#### Change
+
++ 用了医疗影像数据的预训练权重
++ 对dice loss加了权重，与交叉熵的权重一样（总面积的倒数）
++ 对f_score去除了背景类的影响
++ 将backbone更换为resnet50
+
+#### Train
+
++ Optimizer =  Adam
++ lr_decay_type = cos, max_lr = 1e-4, min_lr = 1e-6
++ Freeze_batch_size = 10,  UnFreeze_batch_size = 8
++ Freeze_epoch = 0, UnFreeze_epoch = 24
++ 256 * 256
++ 使用V1_Epoch_2的训练验证划分
+
+#### Problem
+
++ 这是一个多分类任务，标注上出现了重复覆盖的问题
++ 还是全黑
+
+### Epoch 2
+
+#### Change
+
++ 先用至少有一个标注的小模型试试，大概1w6照片
++ 忽略标注类别，只检测有无标注
++ 存在乱标注的问题，清洗了数据集
++ 先忽略掉无标注的图片

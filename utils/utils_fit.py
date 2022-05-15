@@ -10,7 +10,7 @@ from utils.utils_metrics import f_score
 
 def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
                   epoch_all, gen, gen_val, save_dir, cls_weights, device,
-                  loss_history, focal_loss=True, dice_loss=False):
+                  loss_history, focal_loss=True, dice_loss=True):
     print('Start Train')
     with tqdm(total=len(gen), desc=f'Epoch {epoch_now + 1}/{epoch_all}', postfix=dict, mininterval=0.3) as pbar_train:
         total_loss = 0
@@ -38,15 +38,15 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
                 # -------------------------------#
                 #   计算f_score
                 # -------------------------------#
-                _f_score = f_score(outputs, seg_labels)
+                _f_score = f_score(outputs[:, 1:, ...], seg_labels[..., 1:])
 
             loss.backward()
             optimizer.step()
 
             total_loss += loss.item()
             total_f_score += _f_score.item()
-            pbar_train.set_postfix(**{'total_loss': total_loss / (iteration + 1),
-                                      'f_score': total_f_score / (iteration + 1),
+            pbar_train.set_postfix(**{'t_l': total_loss / (iteration + 1),
+                                      'f_s': total_f_score / (iteration + 1),
                                       'lr': get_lr(optimizer)})
             pbar_train.update(1)
 
@@ -77,13 +77,13 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
                     # -------------------------------#
                     #   计算f_score
                     # -------------------------------#
-                    _f_score = f_score(outputs, seg_labels)
+                    _f_score = f_score(outputs[:, 1:, ...], seg_labels[..., 1:])
 
                     val_loss += loss.item()
                     val_f_score += _f_score.item()
 
-                    pbar_val.set_postfix(**{'val_loss': val_loss / (iteration + 1),
-                                            'f_score': val_f_score / (iteration + 1),
+                    pbar_val.set_postfix(**{'v_l': val_loss / (iteration + 1),
+                                            'f_s': val_f_score / (iteration + 1),
                                             'lr': get_lr(optimizer)})
                     pbar_val.update(1)
         # 保存模型

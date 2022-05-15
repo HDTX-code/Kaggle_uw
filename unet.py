@@ -10,7 +10,7 @@ from PIL import Image
 from torch import nn
 
 from nets.unet import Unet as unet
-from utils.utils import cvtColor, preprocess_input, resize_image
+from utils.utils import cvtColor, preprocess_input, resize_image, load_model
 
 
 # --------------------------------------------#
@@ -104,6 +104,7 @@ class Unet(object):
         self.net = unet(num_classes=self.num_classes, backbone=self.backbone)
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # self.net = load_model(self.net, self.model_path)
         self.net.load_state_dict(torch.load(self.model_path, map_location=device))
         self.net = self.net.eval()
         print('{} model, and classes loaded.'.format(self.model_path))
@@ -138,7 +139,7 @@ class Unet(object):
         image_data = np.expand_dims(np.transpose(preprocess_input(np.array(image_data, np.float32)), (2, 0, 1)), 0)
 
         with torch.no_grad():
-            images = torch.from_numpy(image_data)
+            images = torch.from_numpy(image_data/255)
             if self.cuda:
                 images = images.cuda()
 

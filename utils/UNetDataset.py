@@ -1,4 +1,5 @@
 import copy
+import math
 
 import cv2
 import numpy as np
@@ -17,6 +18,7 @@ class UNetDataset(Dataset):
 
     def __getitem__(self, item):
         pic_train = cv2.imread(self.csv.loc[item, "path"])
+        # pic_train = self.gamma_trans(pic_train, math.log10(0.5) / math.log10(np.mean(pic_train[pic_train > 0]) / 255))
         pic_label = cv2.imread(self.csv.loc[item, "label_path"], cv2.IMREAD_GRAYSCALE)
 
         pic_train, pic_label = self.get_random_data(pic_train, pic_label, self.input_shape, random=True)
@@ -32,6 +34,12 @@ class UNetDataset(Dataset):
         seg_labels = np.eye(self.num_classes + 1)[pic_label.reshape([-1])]
         seg_labels = seg_labels.reshape((int(self.input_shape[0]), int(self.input_shape[1]), self.num_classes + 1))
         return pic_train/255, pic_label, seg_labels
+
+    @staticmethod
+    def gamma_trans(img, gamma):
+        gamma_table = [np.power(x / 255.0, gamma) * 255.0 for x in range(256)]
+        gamma_table = np.round(np.array(gamma_table)).astype(np.uint8)
+        return cv2.LUT(img, gamma_table)
 
     @staticmethod
     def rand(a=0, b=1):
@@ -61,10 +69,10 @@ class UNetDataset(Dataset):
 
     @staticmethod
     def resize_cv2(image, label, input_size):
-        iw, ih = input_size
+        ih, iw = input_size
         h, w = image.shape[:2]
-        image_mask = np.ones([iw, ih, 3], dtype=image.dtype) * 128
-        label_mask = np.zeros([iw, ih], dtype=label.dtype)
+        image_mask = np.ones([ih, iw, 3], dtype=image.dtype) * 128
+        label_mask = np.zeros([ih, iw], dtype=label.dtype)
         if iw / ih < w / h:
             nw = copy.copy(iw)
             nh = int(h / w * nw)
@@ -89,8 +97,8 @@ class UNetDataset(Dataset):
 
     def get_random_data(self, image, label, input_shape, jitter=.3, random=True):
         image = self.cvtColor(image)
-        w, h = image.shape[0], image.shape[1]
-        iw, ih = input_shape
+        h, w = image.shape[0], image.shape[1]
+        ih, iw = input_shape
         if random:
             #   生成随机数，scale负责随机缩放、锐化、高斯模糊，scale flip 负责上下左右旋转
             scale = self.rand(0, 1)

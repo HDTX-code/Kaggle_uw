@@ -139,7 +139,7 @@ class Unet(object):
         image_data = np.expand_dims(np.transpose(preprocess_input(np.array(image_data, np.float32)), (2, 0, 1)), 0)
 
         with torch.no_grad():
-            images = torch.from_numpy(image_data/255)
+            images = torch.from_numpy((image_data - np.mean(image_data))/255)
             if self.cuda:
                 images = images.cuda()
 

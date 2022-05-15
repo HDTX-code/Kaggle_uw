@@ -18,7 +18,7 @@ class UNetDataset(Dataset):
 
     def __getitem__(self, item):
         pic_train = cv2.imread(self.csv.loc[item, "path"])
-        pic_train = self.gamma_trans(pic_train, math.log10(0.5) / math.log10(np.mean(pic_train[pic_train > 0]) / 255))
+        # pic_train = self.gamma_trans(pic_train, math.log10(0.5) / math.log10(np.mean(pic_train[pic_train > 0]) / 255))
         pic_label = cv2.imread(self.csv.loc[item, "label_path"], cv2.IMREAD_GRAYSCALE)
 
         pic_train, pic_label = self.get_random_data(pic_train, pic_label, self.input_shape, random=True)

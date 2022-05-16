@@ -8,7 +8,7 @@ from torch import optim
 from torch.utils.data import DataLoader
 
 from nets import Unet, get_lr_scheduler, set_optimizer_lr
-from utils import UNetDataset, fit_one_epoch, LossHistory
+from utils import UNetDataset, fit_one_epoch, LossHistory, load_model
 
 
 def go_train(args):
@@ -17,6 +17,9 @@ def go_train(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     print("backbone = " + args.backbone)
+    print('cls_weights = ', end='')
+    print(np.array(args.cls_weights, np.float32))
+    print('')
 
     # 检查保存文件夹是否存在
     if not os.path.exists(args.save_dir):
@@ -27,12 +30,13 @@ def go_train(args):
     model = Unet(num_classes=args.num_classes, pretrained=False, backbone=args.backbone).train()
 
     if args.model_path != '':
-        print('Load weights {}.'.format(args.model_path))
-        model_dict = model.state_dict()
-        pretrained_dict = torch.load(args.model_path, map_location=device)
-        pretrained_dict = {k: v for k, v in pretrained_dict.items() if np.shape(model_dict[k]) == np.shape(v)}
-        model_dict.update(pretrained_dict)
-        model.load_state_dict(model_dict)
+        # print('Load weights {}.'.format(args.model_path))
+        # model_dict = model.state_dict()
+        # pretrained_dict = torch.load(args.model_path, map_location=device)
+        # pretrained_dict = {k: v for k, v in pretrained_dict.items() if np.shape(model_dict[k]) == np.shape(v)}
+        # model_dict.update(pretrained_dict)
+        # model.load_state_dict(model_dict)
+        model = load_model(model, args.model_path)
 
     # 生成loss_history
     loss_history = LossHistory(args.save_dir, model, input_shape=[args.h, args.w])
@@ -93,7 +97,7 @@ def go_train(args):
                           gen=gen,
                           gen_val=gen_val,
                           save_dir=args.save_dir,
-                          cls_weights=np.ones([args.num_classes], np.float32),
+                          cls_weights=np.ones([args.num_classes], np.float32) if args.cls_weights is None else np.array(args.cls_weights, np.float32),
                           device=device,
                           loss_history=loss_history,
                           num_classes=args.num_classes)
@@ -105,15 +109,15 @@ def go_train(args):
     # ---------------------------------------#
     #   获得学习率下降的公式
     # ---------------------------------------#
-    lr_scheduler_func_UnFreeze = get_lr_scheduler(args.lr_decay_type, Init_lr_fit, Min_lr_fit, args.UnFreeze_Epoch)
+    lr_scheduler_func_UnFreeze = get_lr_scheduler(args.lr_decay_type, Init_lr_fit, Min_lr_fit, args.UnFreeze_epoch)
     gen = DataLoader(train_dataset, shuffle=True, batch_size=args.UnFreeze_batch_size,
                      num_workers=args.num_workers)
-    if args.val_csv is not None:
+    if args.val_csv_path is not None:
         gen_val = DataLoader(val_dataset, shuffle=True, batch_size=args.UnFreeze_batch_size,
                              num_workers=args.num_workers)
     else:
         gen_val = None
-    for epoch_now in range(args.Freeze_epoch, args.UnFreeze_epoch):
+    for epoch_now in range(args.Freeze_epoch, args.UnFreeze_epoch + args.Freeze_epoch):
         set_optimizer_lr(optimizer, lr_scheduler_func_UnFreeze, epoch_now)
         fit_one_epoch(model=model,
                       optimizer=optimizer,
@@ -123,7 +127,7 @@ def go_train(args):
                       gen=gen,
                       gen_val=gen_val,
                       save_dir=args.save_dir,
-                      cls_weights=np.ones([args.num_classes], np.float32),
+                      cls_weights=np.ones([args.num_classes], np.float32) if args.cls_weights is None else np.array(args.cls_weights, np.float32),
                       device=device,
                       loss_history=loss_history,
                       num_classes=args.num_classes)
@@ -132,13 +136,13 @@ def go_train(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='训练参数设置')
     parser.add_argument('--backbone', type=str, default='resnet50', help='特征网络选择，默认resnet50')
-    parser.add_argument('--num_classes', type=int, default=4, help='种类数量')
+    parser.add_argument('--num_classes', type=int, default=4, help='种类数量 + 1')
     parser.add_argument('--save_dir', type=str, default="./logs", help='存储文件夹位置')
     parser.add_argument('--model_path', type=str, default="", help='模型参数位置')
     parser.add_argument('--w', type=int, default=512, help='宽')
     parser.add_argument('--h', type=int, default=512, help='高')
     parser.add_argument('--train_csv_path', type=str, default="./data_csv.csv", help="训练csv")
-    parser.add_argument('--val_csv_path', type=str, default=None, help="验证csv")
+    parser.add_argument('--val_csv_path', type=str, required=True, help="验证csv")
     parser.add_argument('--optimizer_type', type=str, default='adam', help="优化器")
     parser.add_argument('--Freeze_batch_size', type=int, default=18, help="冻结训练batch_size")
     parser.add_argument('--UnFreeze_batch_size', type=int, default=8, help="解冻训练batch_size")
@@ -149,6 +153,7 @@ if __name__ == '__main__':
     parser.add_argument('--weight_decay', type=float, default=0, help="权值衰减，使用adam时建议为0")
     parser.add_argument('--Freeze_epoch', type=int, default=3, help="冻结训练轮次")
     parser.add_argument('--UnFreeze_epoch', type=int, default=6, help="解冻训练轮次")
+    parser.add_argument('--cls_weights', nargs='+', type=float, default=None, help='交叉熵loss系数')
     args = parser.parse_args()
 
     go_train(args)

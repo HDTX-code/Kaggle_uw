@@ -1,4 +1,8 @@
+import copy
+
+import cv2
 import numpy as np
+import torch
 from PIL import Image
 
 
@@ -32,6 +36,34 @@ def resize_image(image, size):
     return new_image, nw, nh
 
 
+def resize_cv2(image, label, input_size):
+    iw, ih = input_size
+    h, w = image.shape[:2]
+    image_mask = np.ones([iw, ih, 3], dtype=image.dtype) * 128
+    label_mask = np.zeros([iw, ih], dtype=label.dtype)
+    if iw / ih < w / h:
+        nw = copy.copy(iw)
+        nh = int(h / w * nw)
+        mask = 1
+    else:
+        nh = ih
+        nw = int(w / h * nh)
+        mask = 0
+    if (image == 0).all():
+        image = cv2.resize(image, (nw, nh))
+        label = cv2.resize(label, (nw, nh))
+    else:
+        image = cv2.resize(image, (nw, nh), cv2.INTER_CUBIC)
+        label = cv2.resize(label, (nw, nh), cv2.INTER_NEAREST)
+    if mask == 1:
+        image_mask[int((ih - nh) / 2):int((ih - nh) / 2) + nh, :, :] = image
+        label_mask[int((ih - nh) / 2):int((ih - nh) / 2) + nh, :] = label
+    else:
+        image_mask[:, int((iw - nw) / 2):int((iw - nw) / 2) + nw, :] = image
+        label_mask[:, int((iw - nw) / 2):int((iw - nw) / 2) + nw] = label
+    return image_mask, label_mask
+
+
 # ---------------------------------------------------#
 #   获得学习率
 # ---------------------------------------------------#
@@ -58,3 +90,23 @@ def download_weights(backbone, model_dir="./model_data"):
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
     load_state_dict_from_url(url, model_dir)
+
+
+def load_model(model, model_path):
+    print('Loading weights into state dict...')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model_dict = model.state_dict()
+    pretrained_dict = torch.load(model_path, map_location=device)
+    a = {}
+    no_load = 0
+    for k, v in pretrained_dict.items():
+        try:
+            if np.shape(model_dict[k]) == np.shape(v):
+                a[k] = v
+        except:
+            no_load += 1
+    model_dict.update(a)
+    model.load_state_dict(model_dict)
+    print("No_load: {}".format(no_load))
+    print('Finished!')
+    return model

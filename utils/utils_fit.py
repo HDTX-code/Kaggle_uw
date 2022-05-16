@@ -22,6 +22,7 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
                 pic_train = pic_train.type(torch.FloatTensor).to(device)
                 pic_label = pic_label.long().to(device)
                 seg_labels = seg_labels.type(torch.FloatTensor).to(device)
+                print(torch.sum(seg_labels, dim=[0, 1, 2]))
 
             optimizer.zero_grad()
             outputs = model(pic_train)

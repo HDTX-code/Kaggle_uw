@@ -22,6 +22,8 @@ def f_score(inputs, target, beta=1, smooth=1e-5, threhold=0.5):
     #   计算dice系数
     # --------------------------------------------#
     temp_inputs = torch.gt(temp_inputs, threhold).float()
+    print(torch.sum(temp_inputs, dim=[0, 1]))
+    print(torch.sum(temp_target[..., :-1], dim=[0, 1]))
     tp = torch.sum(temp_target[..., :-1] * temp_inputs, axis=[0, 1])
     fp = torch.sum(temp_inputs, axis=[0, 1]) - tp
     fn = torch.sum(temp_target[..., :-1], axis=[0, 1]) - tp

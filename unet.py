@@ -164,6 +164,7 @@ class Unet(object):
             #   取出每一个像素点的种类
             # ---------------------------------------------------#
             pr = pr.argmax(axis=-1)
+            print(pr)
 
         if mix_type == 0:
             # seg_img = np.zeros((np.shape(pr)[0], np.shape(pr)[1], 3))

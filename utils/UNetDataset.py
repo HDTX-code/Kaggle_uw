@@ -33,7 +33,7 @@ class UNetDataset(Dataset):
         # -------------------------------------------------------#
         seg_labels = np.eye(self.num_classes + 1)[pic_label.reshape([-1])]
         seg_labels = seg_labels.reshape((int(self.input_shape[0]), int(self.input_shape[1]), self.num_classes + 1))
-        return pic_train, pic_label, seg_labels
+        return pic_train/255.0, pic_label, seg_labels
 
     @staticmethod
     def gamma_trans(img, gamma):

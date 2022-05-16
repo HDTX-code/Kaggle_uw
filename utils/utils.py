@@ -73,7 +73,7 @@ def get_lr(optimizer):
 
 
 def preprocess_input(image):
-    # image /= 255.0
+    image /= 255.0
     return image
 
 

@@ -67,14 +67,15 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
                     seg_labels = seg_labels.type(torch.FloatTensor).to(device)
 
                     outputs = model(pic_train)
-                    if focal_loss:
-                        loss = Focal_Loss(outputs, pic_label, weights, num_classes=num_classes)
-                    else:
-                        loss = CE_Loss(outputs, pic_label, weights, num_classes=num_classes)
+                    # if focal_loss:
+                    #     loss = Focal_Loss(outputs, pic_label, weights, num_classes=num_classes)
+                    # else:
+                    #     loss = CE_Loss(outputs, pic_label, weights, num_classes=num_classes)
 
                     if dice_loss:
-                        main_dice = Dice_loss(outputs, seg_labels)
-                        loss = loss + main_dice
+                        main_dice = Dice_loss(outputs, seg_labels, weights)
+                        # loss = loss + main_dice
+                        loss = main_dice
                     # -------------------------------#
                     #   计算f_score
                     # -------------------------------#

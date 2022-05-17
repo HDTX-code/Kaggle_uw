@@ -19,11 +19,11 @@ class UNetDataset(Dataset):
     def __getitem__(self, item):
         pic_train = cv2.imread(self.csv.loc[item, "path"])
         # pic_train = self.gamma_trans(pic_train, math.log10(0.5) / math.log10(np.mean(pic_train[pic_train > 0]) / 255))
-        pic_label = cv2.imread(self.csv.loc[item, "label_path"], cv2.IMREAD_GRAYSCALE)
+        pic_label = cv2.imread(self.csv.loc[item, "label_path"])
 
         pic_train, pic_label = self.get_random_data(pic_train, pic_label, self.input_shape, random=True)
 
-        pic_label[pic_label >= self.num_classes] = self.num_classes
+        # pic_label[pic_label >= self.num_classes] = self.num_classes
         pic_train = np.transpose(cv2.cvtColor(pic_train, cv2.COLOR_BGR2RGB), [2, 0, 1])
 
         # -------------------------------------------------------#
@@ -31,8 +31,14 @@ class UNetDataset(Dataset):
         #   在这里需要+1是因为voc数据集有些标签具有白边部分
         #   我们需要将白边部分进行忽略，+1的目的是方便忽略。
         # -------------------------------------------------------#
-        seg_labels = np.eye(self.num_classes + 1)[pic_label.reshape([-1])]
-        seg_labels = seg_labels.reshape((int(self.input_shape[0]), int(self.input_shape[1]), self.num_classes + 1))
+        # seg_labels = np.eye(self.num_classes + 1)[pic_label.reshape([-1])]
+        # seg_labels = seg_labels.reshape((int(self.input_shape[0]), int(self.input_shape[1]), self.num_classes + 1))
+        #   用逐点的sigmoid替代全局的softmax
+        seg_labels = np.zeros([pic_label.shape[0], pic_label.shape[1], self.num_classes])
+        seg_labels[..., 1:self.num_classes] = pic_label
+        #   背景
+        seg_labels[np.sum(pic_label, axis=-1) == 0, 0] = 1
+
         return pic_train/255.0, pic_label, seg_labels
 
     @staticmethod

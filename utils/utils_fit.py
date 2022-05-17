@@ -10,7 +10,7 @@ from utils.utils_metrics import f_score
 
 def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
                   epoch_all, gen, gen_val, save_dir, cls_weights, device,
-                  loss_history, focal_loss=True, dice_loss=True):
+                  loss_history, focal_loss=False, dice_loss=True):
     print('Start Train')
     with tqdm(total=len(gen), desc=f'Epoch {epoch_now + 1}/{epoch_all}', postfix=dict, mininterval=0.3) as pbar_train:
         total_loss = 0
@@ -25,13 +25,13 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
 
             optimizer.zero_grad()
             outputs = model(pic_train)
-            if focal_loss:
-                loss = Focal_Loss(outputs, pic_label, weights, num_classes=num_classes)
-            else:
-                loss = CE_Loss(outputs, pic_label, weights, num_classes=num_classes)
+            # if focal_loss:
+            #     loss = Focal_Loss(outputs, pic_label, weights, num_classes=num_classes)
+            # else:
+            #     loss = CE_Loss(outputs, pic_label, weights, num_classes=num_classes)
 
             if dice_loss:
-                main_dice = Dice_loss(outputs, seg_labels)
+                main_dice = Dice_loss(outputs, seg_labels, cls_weights)
                 loss = loss + main_dice
 
             with torch.no_grad():

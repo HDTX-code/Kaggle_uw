@@ -78,7 +78,7 @@ class UNetDataset(Dataset):
         ih, iw = input_size
         h, w = image.shape[:2]
         image_mask = np.ones([ih, iw, 3], dtype=image.dtype) * 128
-        label_mask = np.zeros([ih, iw], dtype=label.dtype)
+        label_mask = np.zeros([ih, iw, 3], dtype=label.dtype)
         if iw / ih < w / h:
             nw = copy.copy(iw)
             nh = int(h / w * nw)

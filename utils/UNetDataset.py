@@ -95,10 +95,10 @@ class UNetDataset(Dataset):
             label = cv2.resize(label, (nw, nh), cv2.INTER_NEAREST)
         if mask == 1:
             image_mask[int((ih - nh) / 2):int((ih - nh) / 2) + nh, :, :] = image
-            label_mask[int((ih - nh) / 2):int((ih - nh) / 2) + nh, :] = label
+            label_mask[int((ih - nh) / 2):int((ih - nh) / 2) + nh, :, :] = label
         else:
             image_mask[:, int((iw - nw) / 2):int((iw - nw) / 2) + nw, :] = image
-            label_mask[:, int((iw - nw) / 2):int((iw - nw) / 2) + nw] = label
+            label_mask[:, int((iw - nw) / 2):int((iw - nw) / 2) + nw, :] = label
         return image_mask, label_mask
 
     def get_random_data(self, image, label, input_shape, jitter=.3, random=True):

@@ -31,7 +31,7 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
             #     loss = CE_Loss(outputs, pic_label, weights, num_classes=num_classes)
 
             if dice_loss:
-                main_dice = Dice_loss(outputs, seg_labels, cls_weights)
+                main_dice = Dice_loss(outputs, seg_labels, weights)
                 loss = loss + main_dice
 
             with torch.no_grad():

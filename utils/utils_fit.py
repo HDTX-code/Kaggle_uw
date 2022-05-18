@@ -25,21 +25,30 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
 
             optimizer.zero_grad()
             outputs = model(pic_train)
-            # if focal_loss:
-            #     loss = Focal_Loss(outputs, pic_label, weights, num_classes=num_classes)
-            # else:
-            #     loss = CE_Loss(outputs, pic_label, weights, num_classes=num_classes)
+            loss = 0
+            main_dice = 0
+            _f_score = 0
+            if focal_loss:
+                for i in range(num_classes):
+                    loss += Focal_Loss(outputs[:, 2*i:2*(i+1), ...], seg_labels[..., i:i+1], weights,
+                                       num_classes=num_classes)
+            else:
+                for i in range(num_classes):
+                    loss += CE_Loss(outputs[:, 2*i:2*(i+1), ...], seg_labels[..., i:i+1], weights,
+                                    num_classes=num_classes)
 
             if dice_loss:
-                main_dice = Dice_loss(outputs, seg_labels, weights)
-                # loss = loss + main_dice
-                loss = main_dice
+                for i in range(num_classes):
+                    main_dice += Dice_loss(outputs[:, 2*i:2*(i+1), ...], seg_labels[..., i:i+1], weights)
+                loss = loss + main_dice
 
             with torch.no_grad():
                 # -------------------------------#
                 #   计算f_score
                 # -------------------------------#
-                _f_score = f_score(outputs, seg_labels)
+                for i in range(1, num_classes):
+                    _f_score += f_score(outputs[:, 2*i:2*(i+1), ...], seg_labels[..., i:i+1])
+                _f_score /= (num_classes - 1)
 
             loss.backward()
             optimizer.step()
@@ -67,10 +76,16 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
                     seg_labels = seg_labels.type(torch.FloatTensor).to(device)
 
                     outputs = model(pic_train)
-                    # if focal_loss:
-                    #     loss = Focal_Loss(outputs, pic_label, weights, num_classes=num_classes)
-                    # else:
-                    #     loss = CE_Loss(outputs, pic_label, weights, num_classes=num_classes)
+                    loss = 0
+                    _f_score = 0
+                    if focal_loss:
+                        for i in range(num_classes):
+                            loss += Focal_Loss(outputs[:, 2 * i:2 * (i + 1), ...], seg_labels[..., i:i + 1], weights,
+                                               num_classes=num_classes)
+                    else:
+                        for i in range(num_classes):
+                            loss += CE_Loss(outputs[:, 2 * i:2 * (i + 1), ...], seg_labels[..., i:i + 1], weights,
+                                            num_classes=num_classes)
 
                     if dice_loss:
                         main_dice = Dice_loss(outputs, seg_labels, weights)
@@ -79,7 +94,9 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
                     # -------------------------------#
                     #   计算f_score
                     # -------------------------------#
-                    _f_score = f_score(outputs, seg_labels)
+                    for i in range(1, num_classes):
+                        _f_score += f_score(outputs[:, 2 * i:2 * (i + 1), ...], seg_labels[..., i:i + 1])
+                    _f_score /= (num_classes - 1)
 
                     val_loss += loss.item()
                     val_f_score += _f_score.item()

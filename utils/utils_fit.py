@@ -30,11 +30,11 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
             _f_score = 0
             if focal_loss:
                 for i in range(num_classes):
-                    loss += Focal_Loss(outputs[:, 2*i:2*(i+1), ...], seg_labels[..., i:i+1], weights,
+                    loss += Focal_Loss(outputs[:, 2*i:2*(i+1), ...], torch.squeeze(seg_labels[..., i:i+1]), weights,
                                        num_classes=num_classes)
             else:
                 for i in range(num_classes):
-                    loss += CE_Loss(outputs[:, 2*i:2*(i+1), ...], seg_labels[..., i:i+1], weights,
+                    loss += CE_Loss(outputs[:, 2*i:2*(i+1), ...], torch.squeeze(seg_labels[..., i:i+1]), weights,
                                     num_classes=num_classes)
 
             if dice_loss:

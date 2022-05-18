@@ -80,13 +80,11 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
                     if focal_loss:
                         for i in range(num_classes-1):
                             loss += Focal_Loss(outputs[:, 2 * i:2 * (i + 1), ...],
-                                               torch.squeeze(seg_labels[..., i:i + 1]).long(),
-                                               weights[[0, i]], num_classes=num_classes)
+                                               seg_labels[..., i:i + 1].long(), weights[[0, i]], num_classes=num_classes)
                     else:
                         for i in range(num_classes-1):
                             loss += CE_Loss(outputs[:, 2 * i:2 * (i + 1), ...],
-                                            torch.squeeze(seg_labels[..., i:i + 1]).long(),
-                                            weights[[0, i]], num_classes=num_classes)
+                                            seg_labels[..., i:i + 1].long(), weights[[0, i]], num_classes=num_classes)
 
                     if dice_loss:
                         for i in range(num_classes-1):

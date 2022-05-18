@@ -78,18 +78,19 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
                     main_dice = 0
                     _f_score = 0
                     if focal_loss:
-                        for i in range(num_classes-1):
-                            loss += Focal_Loss(outputs[:, 2 * i:2 * (i + 1), ...],
-                                               seg_labels[..., i:i + 1].long(), weights[[0, i]], num_classes=num_classes)
+                        for i in range(num_classes - 1):
+                            loss += Focal_Loss(outputs[:, 2 * i:2 * (i + 1), ...], seg_labels[..., i].long(),
+                                               weights[[0, i]], num_classes=num_classes)
                     else:
-                        for i in range(num_classes-1):
-                            loss += CE_Loss(outputs[:, 2 * i:2 * (i + 1), ...],
-                                            seg_labels[..., i:i + 1].long(), weights[[0, i]], num_classes=num_classes)
+                        for i in range(num_classes - 1):
+                            loss += CE_Loss(outputs[:, 2 * i:2 * (i + 1), ...], seg_labels[..., i].long(),
+                                            weights[[0, i]], num_classes=num_classes)
 
                     if dice_loss:
-                        for i in range(num_classes-1):
-                            _f_score += f_score(outputs[:, 2 * i:2 * (i + 1), ...], seg_labels[..., i:i + 1])
-                        _f_score /= (num_classes - 1)
+                        for i in range(num_classes - 1):
+                            main_dice += Dice_loss(outputs[:, 2 * i:2 * (i + 1), ...], seg_labels[..., i:i + 1])
+                        loss = loss + main_dice
+
                     # -------------------------------#
                     #   计算f_score
                     # -------------------------------#

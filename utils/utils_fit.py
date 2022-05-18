@@ -54,9 +54,9 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
 
             total_loss += loss.item()
             total_f_score += _f_score.item()
-            pbar_train.set_postfix(**{'t_l': total_loss / (iteration + 1),
-                                      'f_s': total_f_score / (iteration + 1),
-                                      'lr': get_lr(optimizer)})
+            pbar_train.set_postfix(**{'l': total_loss / (iteration + 1),
+                                      's': total_f_score / (iteration + 1),
+                                      'r': get_lr(optimizer)})
             pbar_train.update(1)
 
     print('Finish Train')
@@ -100,9 +100,9 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
                     val_loss += loss.item()
                     val_f_score += _f_score.item()
 
-                    pbar_val.set_postfix(**{'v_l': val_loss / (iteration + 1),
-                                            'f_s': val_f_score / (iteration + 1),
-                                            'lr': get_lr(optimizer)})
+                    pbar_val.set_postfix(**{'l': val_loss / (iteration + 1),
+                                            's': val_f_score / (iteration + 1),
+                                            'r': get_lr(optimizer)})
                     pbar_val.update(1)
         # 保存模型
         with torch.no_grad():

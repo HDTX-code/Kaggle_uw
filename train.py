@@ -19,10 +19,8 @@ def go_train(args):
     print("backbone = " + args.backbone)
     if args.cls_weights is None:
         cls_weights = np.ones([args.num_classes], np.float32)
-        print(1)
     else:
         cls_weights = np.array(args.cls_weights, np.float32)
-        print(2)
     print('cls_weights = ', end='')
     print(cls_weights)
     print('')

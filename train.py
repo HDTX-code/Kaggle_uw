@@ -31,7 +31,7 @@ def go_train(args):
 
     # 加载模型
 
-    model = Unet(num_classes=(args.num_classes-1) * 2, pretrained=False, backbone=args.backbone).train()
+    model = Unet(num_classes=args.num_classes * 2, pretrained=False, backbone=args.backbone).train()
 
     if args.model_path != '':
         # print('Load weights {}.'.format(args.model_path))

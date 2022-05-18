@@ -33,13 +33,13 @@ class UNetDataset(Dataset):
         # -------------------------------------------------------#
         # seg_labels = np.eye(self.num_classes + 1)[pic_label.reshape([-1])]
         # seg_labels = seg_labels.reshape((int(self.input_shape[0]), int(self.input_shape[1]), self.num_classes + 1))
-        #   用逐点的sigmoid替代全局的softmax
-        seg_labels = np.zeros([pic_label.shape[0], pic_label.shape[1], self.num_classes])
-        seg_labels[..., 1:self.num_classes] = pic_label
+        # #   用逐点的sigmoid替代全局的softmax
+        # seg_labels = np.zeros([pic_label.shape[0], pic_label.shape[1], self.num_classes])
+        # seg_labels[..., 1:self.num_classes] = pic_label
         #   背景
-        seg_labels[np.sum(pic_label, axis=-1) == 0, 0] = 1
+        # seg_labels[np.sum(pic_label, axis=-1) == 0, 0] = 1
 
-        return pic_train/255.0, seg_labels
+        return pic_train/255.0, pic_label
 
     @staticmethod
     def gamma_trans(img, gamma):

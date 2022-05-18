@@ -38,7 +38,7 @@ def Focal_Loss(inputs, target, cls_weights, num_classes=21, alpha=0.5, gamma=2):
     return loss
 
 
-def Dice_loss(inputs, target, beta=1, smooth=1e-5, weights=None):
+def Dice_loss(inputs, target, beta=1, smooth=1e-5):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     n, c, h, w = inputs.size()
     nt, ht, wt, ct = target.size()
@@ -51,10 +51,8 @@ def Dice_loss(inputs, target, beta=1, smooth=1e-5, weights=None):
     # --------------------------------------------#
     #   计算dice loss
     # --------------------------------------------#
-    if weights is None:
-        weights = torch.ones(temp_inputs.shape[-1]).to(device)
 
-    tp = torch.sum(temp_target * temp_inputs, axis=[0, 1]) * weights
+    tp = torch.sum(temp_target * temp_inputs, axis=[0, 1])
     fp = torch.sum(temp_inputs, axis=[0, 1]) - tp
     fn = torch.sum(temp_target, axis=[0, 1]) - tp
 

@@ -39,7 +39,7 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
 
             if dice_loss:
                 for i in range(1, num_classes):
-                    main_dice += Dice_loss(outputs[:, 2*i:2*(i+1), ...], seg_labels[..., i:i+1], weights[[i, i+1]])
+                    main_dice += Dice_loss(outputs[:, 2*i:2*(i+1), ...], seg_labels[..., i:i+1])
                 loss = loss + main_dice
 
             with torch.no_grad():
@@ -79,18 +79,20 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
                     loss = 0
                     _f_score = 0
                     if focal_loss:
-                        for i in range(num_classes):
-                            loss += Focal_Loss(outputs[:, 2 * i:2 * (i + 1), ...], seg_labels[..., i:i + 1], weights,
-                                               num_classes=num_classes)
+                        for i in range(1, num_classes):
+                            loss += Focal_Loss(outputs[:, 2 * i:2 * (i + 1), ...],
+                                               torch.squeeze(seg_labels[..., i:i + 1]).long(),
+                                               weights[[0, i]], num_classes=num_classes)
                     else:
-                        for i in range(num_classes):
-                            loss += CE_Loss(outputs[:, 2 * i:2 * (i + 1), ...], seg_labels[..., i:i + 1], weights,
-                                            num_classes=num_classes)
+                        for i in range(1, num_classes):
+                            loss += CE_Loss(outputs[:, 2 * i:2 * (i + 1), ...],
+                                            torch.squeeze(seg_labels[..., i:i + 1]).long(),
+                                            weights[[0, i]], num_classes=num_classes)
 
                     if dice_loss:
-                        main_dice = Dice_loss(outputs, seg_labels, weights)
-                        # loss = loss + main_dice
-                        loss = main_dice
+                        for i in range(1, num_classes):
+                            main_dice += Dice_loss(outputs[:, 2 * i:2 * (i + 1), ...], seg_labels[..., i:i + 1])
+                        loss = loss + main_dice
                     # -------------------------------#
                     #   计算f_score
                     # -------------------------------#

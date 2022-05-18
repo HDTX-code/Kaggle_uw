@@ -39,7 +39,7 @@ class UNetDataset(Dataset):
         #   背景
         seg_labels[np.sum(pic_label, axis=-1) == 0, 0] = 1
 
-        return pic_train/255.0, pic_label, seg_labels
+        return pic_train/255.0, seg_labels
 
     @staticmethod
     def gamma_trans(img, gamma):

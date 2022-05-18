@@ -16,11 +16,10 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
         total_loss = 0
         total_f_score = 0
         model.train().to(device)
-        for iteration, (pic_train, pic_label, seg_labels) in enumerate(gen):
+        for iteration, (pic_train, seg_labels) in enumerate(gen):
             with torch.no_grad():
                 weights = torch.from_numpy(cls_weights).type(torch.FloatTensor).to(device)
                 pic_train = pic_train.type(torch.FloatTensor).to(device)
-                pic_label = pic_label.long().to(device)
                 seg_labels = seg_labels.type(torch.FloatTensor).to(device)
 
             optimizer.zero_grad()
@@ -69,10 +68,9 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
             val_f_score = 0
             model.eval().to(device)
             with torch.no_grad():
-                for iteration, (pic_train, pic_label, seg_labels) in enumerate(gen_val):
+                for iteration, (pic_train, seg_labels) in enumerate(gen_val):
                     weights = torch.from_numpy(cls_weights).type(torch.FloatTensor).to(device)
                     pic_train = pic_train.type(torch.FloatTensor).to(device)
-                    pic_label = pic_label.long().to(device)
                     seg_labels = seg_labels.type(torch.FloatTensor).to(device)
 
                     outputs = model(pic_train)

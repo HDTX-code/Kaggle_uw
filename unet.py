@@ -127,7 +127,7 @@ class Unet(object):
             # ---------------------------------------------------#
             #   取出每一个像素点的种类
             # ---------------------------------------------------#
-            pr = np.np.concatenate([pr[..., 2*i:2*(i+1)].argmax(axis=-1) for i in range(self.num_classes)], axis=-1)*255
+            pr = np.concatenate([pr[..., 2*i:2*(i+1)].argmax(axis=-1) for i in range(self.num_classes)], axis=-1)*255
 
         if mix_type == 0:
             # seg_img = np.zeros((np.shape(pr)[0], np.shape(pr)[1], 3))

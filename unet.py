@@ -116,12 +116,14 @@ class Unet(object):
             # ---------------------------------------------------#
             pr = torch.dstack([F.softmax(pr.permute(1, 2, 0)[..., 2 * i:2 * (i + 1)],
                                          dim=-1) for i in range(self.num_classes)]).cpu().numpy()
-            pr = np.concatenate([np.expand_dims(pr[..., 0:2].argmax(axis=-1), -1) for i in range(self.num_classes)],
+            print((pr == 0).any() is True)
+            pr = np.concatenate([np.expand_dims(pr[..., 2*i:2*(i+1)].argmax(axis=-1), -1) for i in range(self.num_classes)],
                                 axis=-1) * 255
             # --------------------------------------#
             #   将灰条部分截取掉
             # --------------------------------------#
-            pr = pr[int((self.input_shape[0] - nh) // 2): int((self.input_shape[0] - nh) // 2 + nh), int((self.input_shape[1] - nw) // 2): int((self.input_shape[1] - nw) // 2 + nw), :]
+            pr = pr[int((self.input_shape[0] - nh) // 2): int((self.input_shape[0] - nh) // 2 + nh),
+                 int((self.input_shape[1] - nw) // 2): int((self.input_shape[1] - nw) // 2 + nw), :]
             # ---------------------------------------------------#
             #   进行图片的resize
             # ---------------------------------------------------#
@@ -144,7 +146,7 @@ class Unet(object):
             # ------------------------------------------------#
             #   将新图与原图及进行混合
             # ------------------------------------------------#
-            image = Image.blend(old_img, image, 0.7)
+            image = Image.blend(Image.fromarray(cv2.cvtColor(old_img, cv2.COLOR_BGR2RGB)), image, 0.5)
 
         elif mix_type == 1:
             # seg_img = np.zeros((np.shape(pr)[0], np.shape(pr)[1], 3))
@@ -153,13 +155,16 @@ class Unet(object):
             #     seg_img[:, :, 1] += ((pr[:, :] == c ) * self.colors[c][1]).astype('uint8')
             #     seg_img[:, :, 2] += ((pr[:, :] == c ) * self.colors[c][2]).astype('uint8')
             seg_img = cv2.resize(pr, [orininal_w, orininal_h])
+            print((seg_img == 0).any() == True)
             # ------------------------------------------------#
             #   将新图片转换成Image的形式
             # ------------------------------------------------#
             image = Image.fromarray(cv2.cvtColor(np.uint8(seg_img), cv2.COLOR_BGR2RGB))
 
         elif mix_type == 2:
-            seg_img = (np.expand_dims(pr != 0, -1) * np.array(old_img, np.float32)).astype('uint8')
+            seg_img = (np.expand_dims((pr[..., 0] != 0) & (pr[..., 1] != 0) & (pr[..., 2] != 0), -1) * np.array(old_img,
+                                                                                                                np.float32)).astype(
+                'uint8')
             # ------------------------------------------------#
             #   将新图片转换成Image的形式
             # ------------------------------------------------#

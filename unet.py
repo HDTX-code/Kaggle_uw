@@ -123,7 +123,7 @@ class Unet(object):
             # ---------------------------------------------------#
             #   进行图片的resize
             # ---------------------------------------------------#
-            pr = cv2.resize(pr, (orininal_w, orininal_h), interpolation=cv2.INTER_LINEAR)
+            pr = cv2.resize(pr, (orininal_w, orininal_h), interpolation=cv2.INTER_NEAREST)
             # ---------------------------------------------------#
             #   取出每一个像素点的种类
             # ---------------------------------------------------#
@@ -135,11 +135,11 @@ class Unet(object):
             #     seg_img[:, :, 0] += ((pr[:, :] == c ) * self.colors[c][0]).astype('uint8')
             #     seg_img[:, :, 1] += ((pr[:, :] == c ) * self.colors[c][1]).astype('uint8')
             #     seg_img[:, :, 2] += ((pr[:, :] == c ) * self.colors[c][2]).astype('uint8')
-            seg_img = np.reshape(pr, [orininal_h, orininal_w, -1])
+            seg_img = cv2.resize(pr, [orininal_w, orininal_h])
             # ------------------------------------------------#
             #   将新图片转换成Image的形式
             # ------------------------------------------------#
-            image = Image.fromarray(np.uint8(seg_img))
+            image = Image.fromarray(seg_img)
             # ------------------------------------------------#
             #   将新图与原图及进行混合
             # ------------------------------------------------#

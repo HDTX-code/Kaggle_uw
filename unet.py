@@ -88,7 +88,7 @@ class Unet(object):
         # ---------------------------------------------------#
         #   对输入图像进行一个备份，后面用于绘图
         # ---------------------------------------------------#
-        old_img = copy.deepcopy(image)
+        old_img = copy.deepcopy(Image.fromarray(image))
         orininal_h = image.shape[0]
         orininal_w = image.shape[1]
         # ---------------------------------------------------------#

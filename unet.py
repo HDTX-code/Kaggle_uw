@@ -62,7 +62,7 @@ class Unet(object):
     #   获得所有的分类
     # ---------------------------------------------------#
     def generate(self, onnx=False):
-        self.net = unet(num_classes=self.num_classes*2, backbone=self.backbone)
+        self.net = unet(num_classes=self.num_classes * 2, backbone=self.backbone)
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # self.net = load_model(self.net, self.model_path)
@@ -88,7 +88,7 @@ class Unet(object):
         # ---------------------------------------------------#
         #   对输入图像进行一个备份，后面用于绘图
         # ---------------------------------------------------#
-        old_img = copy.deepcopy(Image.fromarray(image))
+        old_img = copy.deepcopy(Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)))
         orininal_h = image.shape[0]
         orininal_w = image.shape[1]
         # ---------------------------------------------------------#
@@ -114,13 +114,14 @@ class Unet(object):
             # ---------------------------------------------------#
             #   取出每一个像素点的种类
             # ---------------------------------------------------#
-            pr = torch.dstack([F.softmax(pr.permute(1, 2, 0)[..., 2*i:2*(i+1)], dim=-1) for i in range(self.num_classes)]).cpu().numpy()
-            print(pr.shape)
+            pr = torch.dstack([F.softmax(pr.permute(1, 2, 0)[..., 2 * i:2 * (i + 1)],
+                                         dim=-1) for i in range(self.num_classes)]).cpu().numpy()
+            pr = np.concatenate([np.expand_dims(pr[..., 0:2].argmax(axis=-1), -1) for i in range(self.num_classes)],
+                                axis=-1) * 255
             # --------------------------------------#
             #   将灰条部分截取掉
             # --------------------------------------#
-            pr = pr[int((self.input_shape[0] - nh) // 2): int((self.input_shape[0] - nh) // 2 + nh), \
-                 int((self.input_shape[1] - nw) // 2): int((self.input_shape[1] - nw) // 2 + nw), :]
+            pr = pr[int((self.input_shape[0] - nh) // 2): int((self.input_shape[0] - nh) // 2 + nh), int((self.input_shape[1] - nw) // 2): int((self.input_shape[1] - nw) // 2 + nw), :]
             # ---------------------------------------------------#
             #   进行图片的resize
             # ---------------------------------------------------#
@@ -128,7 +129,6 @@ class Unet(object):
             # ---------------------------------------------------#
             #   取出每一个像素点的种类
             # ---------------------------------------------------#
-            pr = np.concatenate([pr[..., 2*i:2*(i+1)].argmax(axis=-1) for i in range(self.num_classes)], axis=-1)*255
 
         if mix_type == 0:
             # seg_img = np.zeros((np.shape(pr)[0], np.shape(pr)[1], 3))
@@ -136,12 +136,11 @@ class Unet(object):
             #     seg_img[:, :, 0] += ((pr[:, :] == c ) * self.colors[c][0]).astype('uint8')
             #     seg_img[:, :, 1] += ((pr[:, :] == c ) * self.colors[c][1]).astype('uint8')
             #     seg_img[:, :, 2] += ((pr[:, :] == c ) * self.colors[c][2]).astype('uint8')
-            print(pr.shape)
             seg_img = cv2.resize(pr, [orininal_w, orininal_h])
             # ------------------------------------------------#
             #   将新图片转换成Image的形式
             # ------------------------------------------------#
-            image = Image.fromarray(seg_img)
+            image = Image.fromarray(cv2.cvtColor(np.uint8(seg_img), cv2.COLOR_BGR2RGB))
             # ------------------------------------------------#
             #   将新图与原图及进行混合
             # ------------------------------------------------#

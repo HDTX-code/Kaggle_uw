@@ -10,7 +10,7 @@ from PIL import Image
 from torch import nn
 
 from nets.unet import Unet as unet
-from utils.utils import cvtColor, preprocess_input, resize_image, load_model
+from utils.utils import cvtColor, preprocess_input, resize_image, load_model, cvtColor_cv2
 
 
 class Unet(object):
@@ -77,23 +77,26 @@ class Unet(object):
     # ---------------------------------------------------#
     #   检测图片
     # ---------------------------------------------------#
-    def detect_image(self, image, mix_type=0):
+    def detect_image(self, image_path, mix_type=0):
+
+        image = cv2.imread(image_path)
         # ---------------------------------------------------------#
         #   在这里将图像转换成RGB图像，防止灰度图在预测时报错。
         #   代码仅仅支持RGB图像的预测，所有其它类型的图像都会转化成RGB
         # ---------------------------------------------------------#
-        image = cvtColor(image)
+        image = cvtColor_cv2(image)
         # ---------------------------------------------------#
         #   对输入图像进行一个备份，后面用于绘图
         # ---------------------------------------------------#
         old_img = copy.deepcopy(image)
-        orininal_h = np.array(image).shape[0]
-        orininal_w = np.array(image).shape[1]
+        orininal_h = image.shape[0]
+        orininal_w = image.shape[1]
         # ---------------------------------------------------------#
         #   给图像增加灰条，实现不失真的resize
         #   也可以直接resize进行识别
         # ---------------------------------------------------------#
-        image_data, nw, nh = resize_image(image, (self.input_shape[1], self.input_shape[0]))
+        image_data, nw, nh = resize_image(Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)),
+                                          (self.input_shape[1], self.input_shape[0]))
         # ---------------------------------------------------------#
         #   添加上batch_size维度
         # ---------------------------------------------------------#
@@ -103,7 +106,7 @@ class Unet(object):
             images = torch.from_numpy(image_data)
             if self.cuda:
                 images = images.cuda()
-
+            pr_label = np.zeros([self.input_shape[0], self.input_shape[1], self.num_classes])
             # ---------------------------------------------------#
             #   图片传入网络进行预测
             # ---------------------------------------------------#
@@ -111,12 +114,12 @@ class Unet(object):
             # ---------------------------------------------------#
             #   取出每一个像素点的种类
             # ---------------------------------------------------#
-            pr = F.softmax(pr.permute(1, 2, 0), dim=-1).cpu().numpy()
+            pr = torch.dstack([F.softmax(pr.permute(1, 2, 0)[..., 2*i:2*(i+1)], dim=-1) for i in range(self.num_classes)]).cpu().numpy()
             # --------------------------------------#
             #   将灰条部分截取掉
             # --------------------------------------#
             pr = pr[int((self.input_shape[0] - nh) // 2): int((self.input_shape[0] - nh) // 2 + nh), \
-                 int((self.input_shape[1] - nw) // 2): int((self.input_shape[1] - nw) // 2 + nw)]
+                 int((self.input_shape[1] - nw) // 2): int((self.input_shape[1] - nw) // 2 + nw), :]
             # ---------------------------------------------------#
             #   进行图片的resize
             # ---------------------------------------------------#
@@ -124,7 +127,7 @@ class Unet(object):
             # ---------------------------------------------------#
             #   取出每一个像素点的种类
             # ---------------------------------------------------#
-            pr = pr.argmax(axis=-1)
+            pr = np.array([pr[..., 2*i:2*(i+1)].argmax(axis=-1) for i in range(self.num_classes)])*255
 
         if mix_type == 0:
             # seg_img = np.zeros((np.shape(pr)[0], np.shape(pr)[1], 3))

@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 
 def go_predict(args):
     print(torch.cuda.is_available())
-    unet = Unet(args.model_path, args.num_classes, args.backbone, [args.w, args.h], torch.cuda.is_available())
-    image = unet.detect_image(Image.open(args.pic_path), mix_type=args.mix_type)
+    unet = Unet(args.model_path, args.num_classes, args.backbone, [args.h, args.w], torch.cuda.is_available())
+    image = unet.detect_image(args.pic_path, mix_type=args.mix_type)
     image = cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2BGR)
     print((image == 0).all())
     cv2.imwrite(os.path.join(args.save_dir, 'image.jpg'), image)

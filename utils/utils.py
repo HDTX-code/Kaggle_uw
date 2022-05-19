@@ -18,6 +18,14 @@ def cvtColor(image):
         return image
 
 
+def cvtColor_cv2(image):
+    if len(np.shape(image)) == 3 and np.shape(image)[2] == 3:
+        return image
+    else:
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        return image
+
+
 # ---------------------------------------------------#
 #   对输入图像进行resize
 # ---------------------------------------------------#
@@ -37,10 +45,10 @@ def resize_image(image, size):
 
 
 def resize_cv2(image, label, input_size):
-    iw, ih = input_size
+    ih, iw = input_size
     h, w = image.shape[:2]
-    image_mask = np.ones([iw, ih, 3], dtype=image.dtype) * 128
-    label_mask = np.zeros([iw, ih], dtype=label.dtype)
+    image_mask = np.ones([ih, iw, 3], dtype=image.dtype) * 128
+    label_mask = np.zeros([ih, iw], dtype=label.dtype)
     if iw / ih < w / h:
         nw = copy.copy(iw)
         nh = int(h / w * nw)

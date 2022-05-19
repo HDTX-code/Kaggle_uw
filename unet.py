@@ -88,7 +88,7 @@ class Unet(object):
         # ---------------------------------------------------#
         #   对输入图像进行一个备份，后面用于绘图
         # ---------------------------------------------------#
-        old_img = copy.deepcopy(Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)))
+        old_img = copy.deepcopy(image)
         orininal_h = image.shape[0]
         orininal_w = image.shape[1]
         # ---------------------------------------------------------#
@@ -152,11 +152,11 @@ class Unet(object):
             #     seg_img[:, :, 0] += ((pr[:, :] == c ) * self.colors[c][0]).astype('uint8')
             #     seg_img[:, :, 1] += ((pr[:, :] == c ) * self.colors[c][1]).astype('uint8')
             #     seg_img[:, :, 2] += ((pr[:, :] == c ) * self.colors[c][2]).astype('uint8')
-            seg_img = np.reshape(np.array(self.colors, np.uint8)[np.reshape(pr, [-1])], [orininal_h, orininal_w, -1])
+            seg_img = cv2.resize(pr, [orininal_w, orininal_h])
             # ------------------------------------------------#
             #   将新图片转换成Image的形式
             # ------------------------------------------------#
-            image = Image.fromarray(np.uint8(seg_img))
+            image = Image.fromarray(cv2.cvtColor(np.uint8(seg_img), cv2.COLOR_BGR2RGB))
 
         elif mix_type == 2:
             seg_img = (np.expand_dims(pr != 0, -1) * np.array(old_img, np.float32)).astype('uint8')

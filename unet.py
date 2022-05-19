@@ -135,6 +135,7 @@ class Unet(object):
             #     seg_img[:, :, 0] += ((pr[:, :] == c ) * self.colors[c][0]).astype('uint8')
             #     seg_img[:, :, 1] += ((pr[:, :] == c ) * self.colors[c][1]).astype('uint8')
             #     seg_img[:, :, 2] += ((pr[:, :] == c ) * self.colors[c][2]).astype('uint8')
+            print(pr.shape)
             seg_img = cv2.resize(pr, [orininal_w, orininal_h])
             # ------------------------------------------------#
             #   将新图片转换成Image的形式

@@ -62,7 +62,7 @@ class Unet(object):
     #   获得所有的分类
     # ---------------------------------------------------#
     def generate(self, onnx=False):
-        self.net = unet(num_classes=self.num_classes, backbone=self.backbone)
+        self.net = unet(num_classes=self.num_classes*2, backbone=self.backbone)
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # self.net = load_model(self.net, self.model_path)

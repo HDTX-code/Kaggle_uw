@@ -35,9 +35,9 @@ def go_pre(args):
     # 加载dataloader
     data_list = []
     for item_case in os.listdir(args.pic_path):
-        for item_day in os.listdir(item_case):
-            path = (args.pic_path, item_case, item_day, 'scans')
-            data_list.extend(map(lambda x: os.path.join(path, x)), os.listdir(path))
+        for item_day in os.listdir(os.path.join(args.pic_path, item_case)):
+            path = os.path.join(args.pic_path, item_case, item_day, 'scans')
+            data_list.extend(map(lambda x: os.path.join(path, x), os.listdir(path)))
 
     id_dict = dict(zip(range(len(data_list)), data_list))
     dataset = TestDataset(data_list, id_dict, [args.h, args.w], args.pic_path, args.is_pre)

@@ -159,22 +159,21 @@ class UNetDataset(Dataset):
 
 
 class TestDataset(Dataset):
-    def __init__(self, data_list, id_dict, input_shape, pic_path, is_pre=True):
+    def __init__(self, data_list, id_dict, input_shape, is_pre=True):
         super(Dataset, self).__init__()
         self.list = data_list
         self.dict = id_dict
         self.shape = input_shape
         self.is_pre = is_pre
-        self.pic_path = pic_path
 
     def __len__(self):
         return len(self.list)
 
     def __getitem__(self, item):
         if self.is_pre:
-            png = self.do_pre(cv2.imread(os.path.join(self.pic_path, self.list[item])))
+            png = self.do_pre(cv2.imread(self.list[item]))
         else:
-            png = cv2.imread(os.path.join(self.pic_path, self.list[item]))
+            png = cv2.imread(self.list[item])
         oh, ow = png.shape[0], png.shape[1]
         png, nw, nh = resize_image(Image.fromarray(cv2.cvtColor(png, cv2.COLOR_BGR2RGB)),
                                    (self.shape[1], self.shape[0]))

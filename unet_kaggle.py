@@ -33,7 +33,12 @@ def go_pre(args):
         model.load_state_dict(torch.load(args.model_path, map_location=device))
 
     # 加载dataloader
-    data_list = os.listdir(args.pic_path)
+    data_list = []
+    for item_case in os.listdir(args.pic_path):
+        for item_day in os.listdir(item_case):
+            path = (args.pic_path, item_case, item_day, 'scans')
+            data_list.extend(map(lambda x: os.path.join(path, x)), os.listdir(path))
+
     id_dict = dict(zip(range(len(data_list)), data_list))
     dataset = TestDataset(data_list, id_dict, [args.h, args.w], args.pic_path, args.is_pre)
     gen = DataLoader(dataset, shuffle=False, batch_size=args.batch_size, num_workers=args.num_workers)

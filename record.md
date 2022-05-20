@@ -142,7 +142,7 @@
 
 #### Change
 
-+ 用逐点的sigmoid替代整体的softmax，将V2的单一类别扩展为三个类别
++ 用逐类别的softmax替代整体的softmax，将V2的单一类别扩展为三个类别
 
 #### Train
 
@@ -151,6 +151,11 @@
 + Freeze_batch_size = 24,  UnFreeze_batch_size = 8
 + Freeze_epoch = 0, UnFreeze_epoch = 24
 + 256 * 256
-+ 重新划分，val per = 0.2
++ V2 Epoch2的划分，val per = 0.2
 + 对数据集做了大量的清洗，去除了无标注的以及标注错乱的
+
+#### Train_result
+
++ f_score = 0.890,  f_score_val = 0.879（去除背景类）
++ 验证集上实验效果良好
 

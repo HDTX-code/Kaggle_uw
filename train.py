@@ -140,7 +140,7 @@ def go_train(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='训练参数设置')
     parser.add_argument('--backbone', type=str, default='resnet50', help='特征网络选择，默认resnet50')
-    parser.add_argument('--num_classes', type=int, default=4, help='种类数量 + 1')
+    parser.add_argument('--num_classes', type=int, default=3, help='种类数量')
     parser.add_argument('--save_dir', type=str, default="./logs", help='存储文件夹位置')
     parser.add_argument('--model_path', type=str, default="", help='模型参数位置')
     parser.add_argument('--w', type=int, default=512, help='宽')

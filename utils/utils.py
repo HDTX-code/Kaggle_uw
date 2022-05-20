@@ -2,6 +2,7 @@ import copy
 
 import cv2
 import numpy as np
+import pandas as pd
 import torch
 from PIL import Image
 
@@ -118,3 +119,31 @@ def load_model(model, model_path):
     print("No_load: {}".format(no_load))
     print('Finished!')
     return model
+
+
+# ---------------------------------------------------#
+#   解码输出
+# ---------------------------------------------------#
+def decode_output(pr, data_csv, label):
+    for item_type in range(pr.shape[-1]):
+        if not (pr[..., item_type] == 0).all():
+            item_pr = np.where(pr[..., item_type].reshape(-1) == 255)[0]
+            list_item = [item_pr[0]]
+            item = 1
+            while item < len(item_pr):
+                i = 1
+                for item_index in range(item, len(item_pr)):
+                    if item_pr[item_index] - item_pr[item_index - 1] == 1:
+                        i += 1
+                        item += 1
+                    else:
+                        break
+                list_item.append(i)
+                if item < len(item_pr):
+                    list_item.append(item_pr[item])
+                item += 1
+            data_csv.loc[len(data_csv)] = [label, item_type, list_item]
+        else:
+            data_csv.loc[len(data_csv)] = [label, item_type, ' ']
+    return data_csv
+

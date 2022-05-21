@@ -144,6 +144,6 @@ def decode_output(pr, data_csv, label):
                 item += 1
             data_csv.loc[len(data_csv)] = [label, item_type, list_item]
         else:
-            data_csv.loc[len(data_csv)] = [label, item_type, ' ']
+            data_csv.loc[len(data_csv)] = [label, item_type, '']
     return data_csv
 

@@ -142,8 +142,8 @@ def decode_output(pr, data_csv, label):
                 if item < len(item_pr):
                     list_item.append(item_pr[item])
                 item += 1
-            data_csv.loc[len(data_csv)] = [label.split("/")[-1], item_type, list_item]
+            data_csv.loc[len(data_csv)] = [label, item_type, list_item]
         else:
-            data_csv.loc[len(data_csv)] = [label.split("/")[-1], item_type, ' ']
+            data_csv.loc[len(data_csv)] = [label, item_type, ' ']
     return data_csv
 

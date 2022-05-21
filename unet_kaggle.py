@@ -61,8 +61,8 @@ def go_pre(args):
                     pr = np.concatenate([np.expand_dims(pr[..., 2 * i:2 * (i + 1)].argmax(axis=-1),
                                                         -1) for i in range(args.num_classes)], axis=-1) * 255
                     pr = pr[int((args.h - nh[item_batch]) // 2): int((args.h - nh[item_batch]) // 2 + nh[item_batch]),
-                         int((args.w - nw[item_batch]) // 2): int((args.w - nw[item_batch]) // 2 + nw[item_batch]),
-                         :]
+                            int((args.w - nw[item_batch]) // 2): int((args.w - nw[item_batch]) // 2 + nw[item_batch]),
+                            :]
                     pr = cv2.resize(pr, (ow[item_batch], oh[item_batch]), interpolation=cv2.INTER_NEAREST)
                     sub_df = decode_output(pr, sub_df, id_dict[label[item_batch]][:-4])
                     # cv2.imwrite(os.path.join(args.save_dir, id_dict[label[item_batch]]), pr)

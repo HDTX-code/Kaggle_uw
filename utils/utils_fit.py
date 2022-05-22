@@ -16,38 +16,47 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
         total_loss = 0
         total_f_score = 0
         model.train().to(device)
-        for iteration, (pic_train, pic_label, seg_labels) in enumerate(gen):
+        for iteration, (pic_train, seg_labels) in enumerate(gen):
             with torch.no_grad():
                 weights = torch.from_numpy(cls_weights).type(torch.FloatTensor).to(device)
                 pic_train = pic_train.type(torch.FloatTensor).to(device)
-                pic_label = pic_label.long().to(device)
                 seg_labels = seg_labels.type(torch.FloatTensor).to(device)
 
             optimizer.zero_grad()
             outputs = model(pic_train)
+            loss = 0
+            main_dice = 0
+            _f_score = 0
             if focal_loss:
-                loss = Focal_Loss(outputs, pic_label, weights, num_classes=num_classes)
+                for i in range(num_classes):
+                    loss += Focal_Loss(outputs[:, 2*i:2*(i+1), ...], seg_labels[..., i].long(),
+                                       weights[[0, i+1]], num_classes=num_classes)
             else:
-                loss = CE_Loss(outputs, pic_label, weights, num_classes=num_classes)
+                for i in range(num_classes):
+                    loss += CE_Loss(outputs[:, 2*i:2*(i+1), ...], seg_labels[..., i].long(),
+                                    weights[[0, i+1]], num_classes=num_classes)
 
             if dice_loss:
-                main_dice = Dice_loss(outputs, seg_labels, weights)
+                for i in range(num_classes):
+                    main_dice += Dice_loss(outputs[:, 2*i:2*(i+1), ...], seg_labels[..., i:i+1])
                 loss = loss + main_dice
 
             with torch.no_grad():
                 # -------------------------------#
                 #   计算f_score
                 # -------------------------------#
-                _f_score = f_score(outputs, seg_labels)
+                for i in range(num_classes):
+                    _f_score += f_score(outputs[:, 2*i:2*(i+1), ...], seg_labels[..., i:i+1])
+                _f_score /= num_classes
 
             loss.backward()
             optimizer.step()
 
             total_loss += loss.item()
             total_f_score += _f_score.item()
-            pbar_train.set_postfix(**{'t_l': total_loss / (iteration + 1),
-                                      'f_s': total_f_score / (iteration + 1),
-                                      'lr': get_lr(optimizer)})
+            pbar_train.set_postfix(**{'l': total_loss / (iteration + 1),
+                                      's': total_f_score / (iteration + 1),
+                                      'r': get_lr(optimizer)})
             pbar_train.update(1)
 
     print('Finish Train')
@@ -59,32 +68,42 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
             val_f_score = 0
             model.eval().to(device)
             with torch.no_grad():
-                for iteration, (pic_train, pic_label, seg_labels) in enumerate(gen_val):
+                for iteration, (pic_train, seg_labels) in enumerate(gen_val):
                     weights = torch.from_numpy(cls_weights).type(torch.FloatTensor).to(device)
                     pic_train = pic_train.type(torch.FloatTensor).to(device)
-                    pic_label = pic_label.long().to(device)
                     seg_labels = seg_labels.type(torch.FloatTensor).to(device)
 
                     outputs = model(pic_train)
+                    loss = 0
+                    main_dice = 0
+                    _f_score = 0
                     if focal_loss:
-                        loss = Focal_Loss(outputs, pic_label, weights, num_classes=num_classes)
+                        for i in range(num_classes):
+                            loss += Focal_Loss(outputs[:, 2 * i:2 * (i + 1), ...], seg_labels[..., i].long(),
+                                               weights[[0, i+1]], num_classes=num_classes)
                     else:
-                        loss = CE_Loss(outputs, pic_label, weights, num_classes=num_classes)
+                        for i in range(num_classes):
+                            loss += CE_Loss(outputs[:, 2 * i:2 * (i + 1), ...], seg_labels[..., i].long(),
+                                            weights[[0, i+1]], num_classes=num_classes)
 
                     if dice_loss:
-                        main_dice = Dice_loss(outputs, seg_labels, weights)
+                        for i in range(num_classes):
+                            main_dice += Dice_loss(outputs[:, 2 * i:2 * (i + 1), ...], seg_labels[..., i:i + 1])
                         loss = loss + main_dice
+
                     # -------------------------------#
                     #   计算f_score
                     # -------------------------------#
-                    _f_score = f_score(outputs, seg_labels)
+                    for i in range(num_classes):
+                        _f_score += f_score(outputs[:, 2 * i:2 * (i + 1), ...], seg_labels[..., i:i + 1])
+                    _f_score /= num_classes
 
                     val_loss += loss.item()
                     val_f_score += _f_score.item()
 
-                    pbar_val.set_postfix(**{'v_l': val_loss / (iteration + 1),
-                                            'f_s': val_f_score / (iteration + 1),
-                                            'lr': get_lr(optimizer)})
+                    pbar_val.set_postfix(**{'l': val_loss / (iteration + 1),
+                                            's': val_f_score / (iteration + 1),
+                                            'r': get_lr(optimizer)})
                     pbar_val.update(1)
         # 保存模型
         with torch.no_grad():

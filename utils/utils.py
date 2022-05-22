@@ -2,6 +2,7 @@ import copy
 
 import cv2
 import numpy as np
+import pandas as pd
 import torch
 from PIL import Image
 
@@ -15,6 +16,14 @@ def cvtColor(image):
         return image
     else:
         image = image.convert('RGB')
+        return image
+
+
+def cvtColor_cv2(image):
+    if len(np.shape(image)) == 3 and np.shape(image)[2] == 3:
+        return image
+    else:
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
         return image
 
 
@@ -37,10 +46,10 @@ def resize_image(image, size):
 
 
 def resize_cv2(image, label, input_size):
-    iw, ih = input_size
+    ih, iw = input_size
     h, w = image.shape[:2]
-    image_mask = np.ones([iw, ih, 3], dtype=image.dtype) * 128
-    label_mask = np.zeros([iw, ih], dtype=label.dtype)
+    image_mask = np.ones([ih, iw, 3], dtype=image.dtype) * 128
+    label_mask = np.zeros([ih, iw], dtype=label.dtype)
     if iw / ih < w / h:
         nw = copy.copy(iw)
         nh = int(h / w * nw)
@@ -103,10 +112,39 @@ def load_model(model, model_path):
         try:
             if np.shape(model_dict[k]) == np.shape(v):
                 a[k] = v
+            else:
+                no_load += 1
         except:
-            no_load += 1
+            pass
     model_dict.update(a)
     model.load_state_dict(model_dict)
     print("No_load: {}".format(no_load))
     print('Finished!')
     return model
+
+
+# ---------------------------------------------------#
+#   解码输出
+# ---------------------------------------------------#
+def rle_encode(img):
+    """
+    img: numpy array, 1 - mask, 0 - background
+    Returns run length as string formated
+    """
+    pixels = img.flatten()
+    pixels = np.concatenate([[0], pixels, [0]])
+    runs = np.where(pixels[1:] != pixels[:-1])[0] + 1
+    runs[1::2] -= runs[::2]
+    return ' '.join(str(x) for x in runs)
+
+
+def decode_output(pr, data_csv, label):
+    for item_type in range(pr.shape[-1]):
+        if not (pr[..., item_type] == 0).all():
+            list_item = pr[..., item_type]
+            list_item[list_item != 0] = 1
+            list_item = rle_encode(list_item)
+            data_csv.loc[len(data_csv)] = [label, item_type, list_item]
+        else:
+            data_csv.loc[len(data_csv)] = [label, item_type, ""]
+    return data_csv

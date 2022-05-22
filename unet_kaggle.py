@@ -34,10 +34,23 @@ def go_pre(args):
 
     # 加载dataloader
     data_list = []
-    for item_case in os.listdir(args.pic_path):
-        for item_day in os.listdir(os.path.join(args.pic_path, item_case)):
-            path = os.path.join(args.pic_path, item_case, item_day, 'scans')
-            data_list.extend(map(lambda x: os.path.join(path, x), os.listdir(path)))
+    if os.path.exists(os.path.join(args.pic_path, 'test')):
+        path_root = os.path.join(args.pic_path, 'test')
+        df_ssub = pd.read_csv(os.path.join(args.pic_path, 'sample_submission.csv'))
+        del df_ssub['predicted']
+        for item_case in os.listdir(path_root):
+            for item_day in os.listdir(os.path.join(path_root, item_case)):
+                path = os.path.join(path_root, item_case, item_day, 'scans')
+                data_list.extend(map(lambda x: os.path.join(path, x), os.listdir(path)))
+    else:
+        path_root = os.path.join(args.pic_path, 'train')
+        df_ssub = pd.read_csv(os.path.join(args.pic_path, 'train.csv'))
+        del df_ssub['segmentation']
+        for item_case in os.listdir(path_root):
+            for item_day in os.listdir(os.path.join(path_root, item_case)):
+                path = os.path.join(path_root, item_case, item_day, 'scans')
+                data_list.extend(map(lambda x: os.path.join(path, x), os.listdir(path)))
+            break
 
     id_dict = dict(zip(range(len(data_list)), data_list))
     dataset = TestDataset(data_list, id_dict, [args.h, args.w], args.is_pre)
@@ -74,24 +87,30 @@ def go_pre(args):
                     # cv2.imwrite(os.path.join('./data/test/label', id_dict[label[item_batch]]), overlapping_label)
                 pbar.update(1)
     sub_df['class'] = sub_df['class'].apply(lambda x: class_dict[x])
-    sub_df['predicted'] = sub_df['predicted'].apply(
-        lambda x: "".join([str(i) + " " for i in x])[:-1] if x != '' else '')
     sub_df['id'] = sub_df['id'].apply(lambda x: str(x.split("/")[5]) + "_" + str(
         x.split("/")[-1].split("_")[0] + '_' + x.split("/")[-1].split("_")[1]))
-    sub_df.to_csv(os.path.join(args.save_dir, 'submission.csv'), index=False)
+    if not os.path.exists(os.path.join(args.pic_path, 'test')):
+        sub_df = df_ssub.merge(sub_df, on=['id', 'class'])
+    else:
+        sub_df = df_ssub.merge(sub_df, on=['id', 'class'])
+        assert len(sub_df) == len(df_ssub)
+    sub_df[['id', 'class', 'predicted']].to_csv(os.path.join(args.save_dir, 'submission.csv'), index=False)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='提交设置')
     parser.add_argument('--backbone', type=str, default='resnet50', help='特征网络选择，默认resnet50')
     parser.add_argument('--num_classes', type=int, default=3, help='种类数量')
-    parser.add_argument('--save_dir', type=str, default="./data/test", help='存储文件夹位置')
+    parser.add_argument('--save_dir', type=str, default="./", help='存储文件夹位置')
     parser.add_argument('--model_path', type=str,
-                        default="data/weights/V3 Epoch1/ep024-f_score0.890-val_f_score0.879.pth", help='模型参数位置')
-    parser.add_argument('--pic_path', type=str, default=r"D:\work\project\Kaggle_uw\data\test\train", help="pic文件夹位置")
+                        default="../input/uw-weigths/ep024-f_score0.890-val_f_score0.879.pth", help='模型参数位置')
+    parser.add_argument('--pic_path', type=str, default=r"../input/uw-madison-gi-tract-image-segmentation",
+                        help="pic文件夹位置")
     parser.add_argument('--num_workers', type=int, default=2, help="num_workers")
-    parser.add_argument('--is_pre', type=bool, default=False, help="num_workers")
-    parser.add_argument('--batch_size', type=int, default=2, help="batch_size")
+    parser.add_argument('--is_pre', type=bool, default=True, help="是否预处理")
+    parser.add_argument('--sub_path', type=str,
+                        default='../input/uw-madison-gi-tract-image-segmentation/sample_submission.csv', help="提交样式csv")
+    parser.add_argument('--batch_size', type=int, default=64, help="batch_size")
     parser.add_argument('--w', type=int, default=384, help='宽')
     parser.add_argument('--h', type=int, default=384, help='高')
     args = parser.parse_args()

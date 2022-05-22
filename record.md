@@ -150,7 +150,7 @@
 + lr_decay_type = cos, max_lr = 1e-4, min_lr = 1e-6
 + Freeze_batch_size = 24,  UnFreeze_batch_size = 8
 + Freeze_epoch = 0, UnFreeze_epoch = 24
-+ 256 * 256
++ 384*384
 + V2 Epoch2的划分，val per = 0.2
 + 对数据集做了大量的清洗，去除了无标注的以及标注错乱的
 
@@ -158,4 +158,24 @@
 
 + f_score = 0.890,  f_score_val = 0.879（去除背景类）
 + 验证集上实验效果良好
++ Score: 0.683
+
+#### problem
+
++ 训练集里没有每次扫描时前几张那种空标注的图片，导致误识率很高
+
+### Epoch 2
+
+#### Change
+
++ 扩充数据集，删除误标的，但要保留大量的无标注数据集
+
+#### Train
+
++ Optimizer =  Adam
++ lr_decay_type = cos, max_lr = 1e-4, min_lr = 1e-6
++ Freeze_batch_size = 24,  UnFreeze_batch_size = 8
++ Freeze_epoch = 0, UnFreeze_epoch = 24
++ 384*384
++ 重新划分，val per = 0.2
 

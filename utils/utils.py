@@ -112,8 +112,10 @@ def load_model(model, model_path):
         try:
             if np.shape(model_dict[k]) == np.shape(v):
                 a[k] = v
+            else:
+                no_load += 1
         except:
-            no_load += 1
+            pass
     model_dict.update(a)
     model.load_state_dict(model_dict)
     print("No_load: {}".format(no_load))
@@ -124,26 +126,25 @@ def load_model(model, model_path):
 # ---------------------------------------------------#
 #   解码输出
 # ---------------------------------------------------#
+def rle_encode(img):
+    """
+    img: numpy array, 1 - mask, 0 - background
+    Returns run length as string formated
+    """
+    pixels = img.flatten()
+    pixels = np.concatenate([[0], pixels, [0]])
+    runs = np.where(pixels[1:] != pixels[:-1])[0] + 1
+    runs[1::2] -= runs[::2]
+    return ' '.join(str(x) for x in runs)
+
+
 def decode_output(pr, data_csv, label):
     for item_type in range(pr.shape[-1]):
         if not (pr[..., item_type] == 0).all():
-            item_pr = np.where(pr[..., item_type].reshape(-1) == 255)[0]
-            list_item = [item_pr[0]]
-            item = 1
-            while item < len(item_pr):
-                i = 1
-                for item_index in range(item, len(item_pr)):
-                    if item_pr[item_index] - item_pr[item_index - 1] == 1:
-                        i += 1
-                        item += 1
-                    else:
-                        break
-                list_item.append(i)
-                if item < len(item_pr):
-                    list_item.append(item_pr[item])
-                item += 1
+            list_item = pr[..., item_type]
+            list_item[list_item != 0] = 1
+            list_item = rle_encode(list_item)
             data_csv.loc[len(data_csv)] = [label, item_type, list_item]
         else:
-            data_csv.loc[len(data_csv)] = [label, item_type, '']
+            data_csv.loc[len(data_csv)] = [label, item_type, ""]
     return data_csv
-

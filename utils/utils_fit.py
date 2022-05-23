@@ -31,10 +31,10 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
                 for i in range(num_classes):
                     loss += Focal_Loss(outputs[:, 2*i:2*(i+1), ...], seg_labels[..., i].long(),
                                        weights[[0, i+1]], num_classes=num_classes)
-
-            for i in range(num_classes):
-                loss += CE_Loss(outputs[:, 2*i:2*(i+1), ...], seg_labels[..., i].long(),
-                                weights[[0, i+1]], num_classes=num_classes)
+            else:
+                for i in range(num_classes):
+                    loss += CE_Loss(outputs[:, 2*i:2*(i+1), ...], seg_labels[..., i].long(),
+                                    weights[[0, i+1]], num_classes=num_classes)
 
             if dice_loss:
                 for i in range(num_classes):
@@ -81,10 +81,10 @@ def fit_one_epoch(model, optimizer, epoch_now, epoch_Freeze, num_classes,
                         for i in range(num_classes):
                             loss += Focal_Loss(outputs[:, 2 * i:2 * (i + 1), ...], seg_labels[..., i].long(),
                                                weights[[0, i+1]], num_classes=num_classes)
-
-                    for i in range(num_classes):
-                        loss += CE_Loss(outputs[:, 2 * i:2 * (i + 1), ...], seg_labels[..., i].long(),
-                                        weights[[0, i+1]], num_classes=num_classes)
+                    else:
+                        for i in range(num_classes):
+                            loss += CE_Loss(outputs[:, 2 * i:2 * (i + 1), ...], seg_labels[..., i].long(),
+                                            weights[[0, i+1]], num_classes=num_classes)
 
                     if dice_loss:
                         for i in range(num_classes):

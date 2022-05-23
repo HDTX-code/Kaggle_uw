@@ -13,12 +13,18 @@ from utils import UNetDataset, fit_one_epoch, LossHistory, load_model
 
 def go_train(args):
     # 训练设备
+    print("GPU: ", end="")
     print(torch.cuda.is_available())
+    print("")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     print("backbone = " + args.backbone)
+    if args.cls_weights is None:
+        cls_weights = np.ones([args.num_classes + 1], np.float32)
+    else:
+        cls_weights = np.array(args.cls_weights, np.float32)
     print('cls_weights = ', end='')
-    print(np.array(args.cls_weights, np.float32))
+    print(cls_weights)
     print('')
 
     # 检查保存文件夹是否存在
@@ -27,7 +33,7 @@ def go_train(args):
 
     # 加载模型
 
-    model = Unet(num_classes=args.num_classes, pretrained=False, backbone=args.backbone).train()
+    model = Unet(num_classes=args.num_classes * 2, pretrained=False, backbone=args.backbone).train()
 
     if args.model_path != '':
         # print('Load weights {}.'.format(args.model_path))
@@ -57,7 +63,8 @@ def go_train(args):
     lr_limit_max = 1e-4 if args.optimizer_type == 'adam' else 1e-1
     lr_limit_min = 1e-4 if args.optimizer_type == 'adam' else 5e-4
     Init_lr_fit = min(max(args.UnFreeze_batch_size / nbs * args.Init_lr, lr_limit_min), lr_limit_max)
-    Min_lr_fit = min(max(args.UnFreeze_batch_size / nbs * args.Init_lr * 0.01, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
+    Min_lr_fit = min(max(args.UnFreeze_batch_size / nbs * args.Init_lr * 0.01, lr_limit_min * 1e-2),
+                     lr_limit_max * 1e-2)
     # ---------------------------------------#
     #   根据optimizer_type选择优化器
     # ---------------------------------------#
@@ -89,18 +96,18 @@ def go_train(args):
 
         for epoch_now in range(args.Freeze_epoch):
             set_optimizer_lr(optimizer, lr_scheduler_func_Freeze, epoch_now)
-            fit_one_epoch(model=model,
-                          optimizer=optimizer,
-                          epoch_now=epoch_now,
-                          epoch_Freeze=args.Freeze_epoch,
-                          epoch_all=args.Freeze_epoch + args.UnFreeze_epoch,
-                          gen=gen,
-                          gen_val=gen_val,
-                          save_dir=args.save_dir,
-                          cls_weights=np.ones([args.num_classes], np.float32) if args.cls_weights is None else np.array(args.cls_weights, np.float32),
-                          device=device,
-                          loss_history=loss_history,
-                          num_classes=args.num_classes)
+            model = fit_one_epoch(model=model,
+                                  optimizer=optimizer,
+                                  epoch_now=epoch_now,
+                                  epoch_Freeze=args.Freeze_epoch,
+                                  epoch_all=args.Freeze_epoch + args.UnFreeze_epoch,
+                                  gen=gen,
+                                  gen_val=gen_val,
+                                  save_dir=args.save_dir,
+                                  cls_weights=cls_weights,
+                                  device=device,
+                                  loss_history=loss_history,
+                                  num_classes=args.num_classes)
     # ---------------------------------------#
     #   开始冻结训练
     # ---------------------------------------#
@@ -119,24 +126,24 @@ def go_train(args):
         gen_val = None
     for epoch_now in range(args.Freeze_epoch, args.UnFreeze_epoch + args.Freeze_epoch):
         set_optimizer_lr(optimizer, lr_scheduler_func_UnFreeze, epoch_now)
-        fit_one_epoch(model=model,
-                      optimizer=optimizer,
-                      epoch_now=epoch_now,
-                      epoch_Freeze=args.Freeze_epoch,
-                      epoch_all=args.Freeze_epoch + args.UnFreeze_epoch,
-                      gen=gen,
-                      gen_val=gen_val,
-                      save_dir=args.save_dir,
-                      cls_weights=np.ones([args.num_classes], np.float32) if args.cls_weights is None else np.array(args.cls_weights, np.float32),
-                      device=device,
-                      loss_history=loss_history,
-                      num_classes=args.num_classes)
+        model = fit_one_epoch(model=model,
+                              optimizer=optimizer,
+                              epoch_now=epoch_now,
+                              epoch_Freeze=args.Freeze_epoch,
+                              epoch_all=args.Freeze_epoch + args.UnFreeze_epoch,
+                              gen=gen,
+                              gen_val=gen_val,
+                              save_dir=args.save_dir,
+                              cls_weights=cls_weights,
+                              device=device,
+                              loss_history=loss_history,
+                              num_classes=args.num_classes)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='训练参数设置')
     parser.add_argument('--backbone', type=str, default='resnet50', help='特征网络选择，默认resnet50')
-    parser.add_argument('--num_classes', type=int, default=4, help='种类数量 + 1')
+    parser.add_argument('--num_classes', type=int, default=3, help='种类数量')
     parser.add_argument('--save_dir', type=str, default="./logs", help='存储文件夹位置')
     parser.add_argument('--model_path', type=str, default="", help='模型参数位置')
     parser.add_argument('--w', type=int, default=512, help='宽')

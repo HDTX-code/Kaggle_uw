@@ -98,7 +98,7 @@
 
 + Optimizer =  Adam
 + lr_decay_type = cos, max_lr = 1e-4, min_lr = 1e-6
-+ Freeze_batch_size = 10,  UnFreeze_batch_size = 8
++ Freeze_batch_size = 24,  UnFreeze_batch_size = 8
 + Freeze_epoch = 0, UnFreeze_epoch = 24
 + 256 * 256
 + 使用V1_Epoch_2的训练验证划分
@@ -121,7 +121,7 @@
 
 + Optimizer =  Adam
 + lr_decay_type = cos, max_lr = 1e-4, min_lr = 1e-6
-+ Freeze_batch_size = 10,  UnFreeze_batch_size = 8
++ Freeze_batch_size = 24,  UnFreeze_batch_size = 8
 + Freeze_epoch = 0, UnFreeze_epoch = 24
 + 256 * 256
 + 重新划分，val per = 0.2
@@ -135,3 +135,47 @@
 
 + 对数据集做了大量的清洗，去除了无标注的以及标注错乱的（标注区域有一半都是全黑，即灰度为0的），加上无标注数据集后效果不一定还有这么好
 + 未区分s sb lb三个种类，由于三个种类有完全重叠的地方，要单独用sigmod而不是softmax，要大改整个模型，另外开一个分支
+
+## V3
+
+### Epoch 1
+
+#### Change
+
++ 用逐类别的softmax替代整体的softmax，将V2的单一类别扩展为三个类别
+
+#### Train
+
++ Optimizer =  Adam
++ lr_decay_type = cos, max_lr = 1e-4, min_lr = 1e-6
++ Freeze_batch_size = 24,  UnFreeze_batch_size = 8
++ Freeze_epoch = 0, UnFreeze_epoch = 24
++ 384*384
++ V2 Epoch2的划分，val per = 0.2
++ 对数据集做了大量的清洗，去除了无标注的以及标注错乱的
+
+#### Train_result
+
++ f_score = 0.890,  f_score_val = 0.879（去除背景类）
++ 验证集上实验效果良好
++ Score: 0.683
+
+#### problem
+
++ 训练集里没有每次扫描时前几张那种空标注的图片，导致误识率很高
+
+### Epoch 2
+
+#### Change
+
++ 扩充数据集，删除误标的，但要保留大量的无标注数据集
+
+#### Train
+
++ Optimizer =  Adam
++ lr_decay_type = cos, max_lr = 1e-4, min_lr = 1e-6
++ Freeze_batch_size = 24,  UnFreeze_batch_size = 8
++ Freeze_epoch = 0, UnFreeze_epoch = 24
++ 384*384
++ 重新划分，val per = 0.2
+

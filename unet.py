@@ -10,49 +10,10 @@ from PIL import Image
 from torch import nn
 
 from nets.unet import Unet as unet
-from utils.utils import cvtColor, preprocess_input, resize_image, load_model
+from utils.utils import cvtColor, preprocess_input, resize_image, load_model, cvtColor_cv2
 
 
-# --------------------------------------------#
-#   使用自己训练好的模型预测需要修改2个参数
-#   model_path和num_classes都需要修改！
-#   如果出现shape不匹配
-#   一定要注意训练时的model_path和num_classes数的修改
-# --------------------------------------------#
 class Unet(object):
-    # _defaults = {
-    #     # -------------------------------------------------------------------#
-    #     #   model_path指向logs文件夹下的权值文件
-    #     #   训练好后logs文件夹下存在多个权值文件，选择验证集损失较低的即可。
-    #     #   验证集损失较低不代表miou较高，仅代表该权值在验证集上泛化性能较好。
-    #     # -------------------------------------------------------------------#
-    #     "model_path": 'model_data/unet_vgg_voc.pth',
-    #     # --------------------------------#
-    #     #   所需要区分的类的个数+1
-    #     # --------------------------------#
-    #     "num_classes": 21,
-    #     # --------------------------------#
-    #     #   所使用的的主干网络：vgg、resnet50
-    #     # --------------------------------#
-    #     "backbone": "vgg",
-    #     # --------------------------------#
-    #     #   输入图片的大小
-    #     # --------------------------------#
-    #     "input_shape": [512, 512],
-    #     # -------------------------------------------------#
-    #     #   mix_type参数用于控制检测结果的可视化方式
-    #     #
-    #     #   mix_type = 0的时候代表原图与生成的图进行混合
-    #     #   mix_type = 1的时候代表仅保留生成的图
-    #     #   mix_type = 2的时候代表仅扣去背景，仅保留原图中的目标
-    #     # -------------------------------------------------#
-    #     "mix_type": 0,
-    #     # --------------------------------#
-    #     #   是否使用Cuda
-    #     #   没有GPU可以设置成False
-    #     # --------------------------------#
-    #     "cuda": True,
-    # }
 
     # ---------------------------------------------------#
     #   初始化UNET
@@ -101,7 +62,7 @@ class Unet(object):
     #   获得所有的分类
     # ---------------------------------------------------#
     def generate(self, onnx=False):
-        self.net = unet(num_classes=self.num_classes, backbone=self.backbone)
+        self.net = unet(num_classes=self.num_classes * 2, backbone=self.backbone)
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # self.net = load_model(self.net, self.model_path)
@@ -116,23 +77,26 @@ class Unet(object):
     # ---------------------------------------------------#
     #   检测图片
     # ---------------------------------------------------#
-    def detect_image(self, image, mix_type=0):
+    def detect_image(self, image_path, mix_type=0):
+
+        image = cv2.imread(image_path)
         # ---------------------------------------------------------#
         #   在这里将图像转换成RGB图像，防止灰度图在预测时报错。
         #   代码仅仅支持RGB图像的预测，所有其它类型的图像都会转化成RGB
         # ---------------------------------------------------------#
-        image = cvtColor(image)
+        image = cvtColor_cv2(image)
         # ---------------------------------------------------#
         #   对输入图像进行一个备份，后面用于绘图
         # ---------------------------------------------------#
         old_img = copy.deepcopy(image)
-        orininal_h = np.array(image).shape[0]
-        orininal_w = np.array(image).shape[1]
+        orininal_h = image.shape[0]
+        orininal_w = image.shape[1]
         # ---------------------------------------------------------#
         #   给图像增加灰条，实现不失真的resize
         #   也可以直接resize进行识别
         # ---------------------------------------------------------#
-        image_data, nw, nh = resize_image(image, (self.input_shape[1], self.input_shape[0]))
+        image_data, nw, nh = resize_image(Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)),
+                                          (self.input_shape[1], self.input_shape[0]))
         # ---------------------------------------------------------#
         #   添加上batch_size维度
         # ---------------------------------------------------------#
@@ -142,7 +106,6 @@ class Unet(object):
             images = torch.from_numpy(image_data)
             if self.cuda:
                 images = images.cuda()
-
             # ---------------------------------------------------#
             #   图片传入网络进行预测
             # ---------------------------------------------------#
@@ -150,20 +113,22 @@ class Unet(object):
             # ---------------------------------------------------#
             #   取出每一个像素点的种类
             # ---------------------------------------------------#
-            pr = F.softmax(pr.permute(1, 2, 0), dim=-1).cpu().numpy()
+            pr = torch.dstack([F.softmax(pr.permute(1, 2, 0)[..., 2 * i:2 * (i + 1)],
+                                         dim=-1) for i in range(self.num_classes)]).cpu().numpy()
+            pr = np.concatenate([np.expand_dims(pr[..., 2*i:2*(i+1)].argmax(axis=-1),
+                                                -1) for i in range(self.num_classes)], axis=-1) * 255
             # --------------------------------------#
             #   将灰条部分截取掉
             # --------------------------------------#
-            pr = pr[int((self.input_shape[0] - nh) // 2): int((self.input_shape[0] - nh) // 2 + nh), \
-                 int((self.input_shape[1] - nw) // 2): int((self.input_shape[1] - nw) // 2 + nw)]
+            pr = pr[int((self.input_shape[0] - nh) // 2): int((self.input_shape[0] - nh) // 2 + nh),
+                    int((self.input_shape[1] - nw) // 2): int((self.input_shape[1] - nw) // 2 + nw), :]
             # ---------------------------------------------------#
             #   进行图片的resize
             # ---------------------------------------------------#
-            pr = cv2.resize(pr, (orininal_w, orininal_h), interpolation=cv2.INTER_LINEAR)
+            pr = cv2.resize(pr, (orininal_w, orininal_h), interpolation=cv2.INTER_NEAREST)
             # ---------------------------------------------------#
             #   取出每一个像素点的种类
             # ---------------------------------------------------#
-            pr = pr.argmax(axis=-1)
 
         if mix_type == 0:
             # seg_img = np.zeros((np.shape(pr)[0], np.shape(pr)[1], 3))
@@ -171,15 +136,15 @@ class Unet(object):
             #     seg_img[:, :, 0] += ((pr[:, :] == c ) * self.colors[c][0]).astype('uint8')
             #     seg_img[:, :, 1] += ((pr[:, :] == c ) * self.colors[c][1]).astype('uint8')
             #     seg_img[:, :, 2] += ((pr[:, :] == c ) * self.colors[c][2]).astype('uint8')
-            seg_img = np.reshape(np.array(self.colors, np.uint8)[np.reshape(pr, [-1])], [orininal_h, orininal_w, -1])
+            seg_img = cv2.resize(pr, [orininal_w, orininal_h])
             # ------------------------------------------------#
             #   将新图片转换成Image的形式
             # ------------------------------------------------#
-            image = Image.fromarray(np.uint8(seg_img))
+            image = Image.fromarray(cv2.cvtColor(np.uint8(seg_img), cv2.COLOR_BGR2RGB))
             # ------------------------------------------------#
             #   将新图与原图及进行混合
             # ------------------------------------------------#
-            image = Image.blend(old_img, image, 0.7)
+            image = Image.blend(Image.fromarray(cv2.cvtColor(old_img, cv2.COLOR_BGR2RGB)), image, 0.5)
 
         elif mix_type == 1:
             # seg_img = np.zeros((np.shape(pr)[0], np.shape(pr)[1], 3))
@@ -187,14 +152,15 @@ class Unet(object):
             #     seg_img[:, :, 0] += ((pr[:, :] == c ) * self.colors[c][0]).astype('uint8')
             #     seg_img[:, :, 1] += ((pr[:, :] == c ) * self.colors[c][1]).astype('uint8')
             #     seg_img[:, :, 2] += ((pr[:, :] == c ) * self.colors[c][2]).astype('uint8')
-            seg_img = np.reshape(np.array(self.colors, np.uint8)[np.reshape(pr, [-1])], [orininal_h, orininal_w, -1])
+            seg_img = cv2.resize(pr, [orininal_w, orininal_h])
             # ------------------------------------------------#
             #   将新图片转换成Image的形式
             # ------------------------------------------------#
-            image = Image.fromarray(np.uint8(seg_img))
+            image = Image.fromarray(cv2.cvtColor(np.uint8(seg_img), cv2.COLOR_BGR2RGB))
 
         elif mix_type == 2:
-            seg_img = (np.expand_dims(pr != 0, -1) * np.array(old_img, np.float32)).astype('uint8')
+            print((pr[..., 0] != 0) & (pr[..., 1] != 0) & (pr[..., 2] != 0))
+            seg_img = (np.expand_dims(np.sum(pr, axis=-1) != 0, -1) * np.array(old_img, np.float32)).astype('uint8')
             # ------------------------------------------------#
             #   将新图片转换成Image的形式
             # ------------------------------------------------#

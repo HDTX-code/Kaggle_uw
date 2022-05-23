@@ -166,10 +166,12 @@
 
 ### Epoch 2
 
-#### Change
+#### contrast
 
-+ 扩充数据集，删除误标的，但要保留大量的无标注数据集
-
++ resnet50+无乱标注数据+有权值+384*384+val_0.832 = score 0.681
++ resnet50+无乱标注数据+无权值+384*384+val_0.768 = score 0.647
++ resnet50+所有数据+无权值+256*256+val_0.768 = score 0.768
++ resnet50+无乱标注无零标注数据+有权值+384*384+val_0.890 = score 0.684
 #### Train
 
 + Optimizer =  Adam

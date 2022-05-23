@@ -15,7 +15,9 @@ from utils import TestDataset, decode_output
 
 def go_pre(args):
     # 训练设备
+    print("GPU: ", end="")
     print(torch.cuda.is_available())
+    print("")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # 特征网络
     print("backbone = " + args.backbone)

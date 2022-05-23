@@ -13,7 +13,9 @@ from utils import UNetDataset, fit_one_epoch, LossHistory, load_model
 
 def go_train(args):
     # 训练设备
+    print("GPU: ", end="")
     print(torch.cuda.is_available())
+    print("")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     print("backbone = " + args.backbone)
@@ -61,7 +63,8 @@ def go_train(args):
     lr_limit_max = 1e-4 if args.optimizer_type == 'adam' else 1e-1
     lr_limit_min = 1e-4 if args.optimizer_type == 'adam' else 5e-4
     Init_lr_fit = min(max(args.UnFreeze_batch_size / nbs * args.Init_lr, lr_limit_min), lr_limit_max)
-    Min_lr_fit = min(max(args.UnFreeze_batch_size / nbs * args.Init_lr * 0.01, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
+    Min_lr_fit = min(max(args.UnFreeze_batch_size / nbs * args.Init_lr * 0.01, lr_limit_min * 1e-2),
+                     lr_limit_max * 1e-2)
     # ---------------------------------------#
     #   根据optimizer_type选择优化器
     # ---------------------------------------#
@@ -93,18 +96,18 @@ def go_train(args):
 
         for epoch_now in range(args.Freeze_epoch):
             set_optimizer_lr(optimizer, lr_scheduler_func_Freeze, epoch_now)
-            fit_one_epoch(model=model,
-                          optimizer=optimizer,
-                          epoch_now=epoch_now,
-                          epoch_Freeze=args.Freeze_epoch,
-                          epoch_all=args.Freeze_epoch + args.UnFreeze_epoch,
-                          gen=gen,
-                          gen_val=gen_val,
-                          save_dir=args.save_dir,
-                          cls_weights=cls_weights,
-                          device=device,
-                          loss_history=loss_history,
-                          num_classes=args.num_classes)
+            model = fit_one_epoch(model=model,
+                                  optimizer=optimizer,
+                                  epoch_now=epoch_now,
+                                  epoch_Freeze=args.Freeze_epoch,
+                                  epoch_all=args.Freeze_epoch + args.UnFreeze_epoch,
+                                  gen=gen,
+                                  gen_val=gen_val,
+                                  save_dir=args.save_dir,
+                                  cls_weights=cls_weights,
+                                  device=device,
+                                  loss_history=loss_history,
+                                  num_classes=args.num_classes)
     # ---------------------------------------#
     #   开始冻结训练
     # ---------------------------------------#
@@ -123,18 +126,18 @@ def go_train(args):
         gen_val = None
     for epoch_now in range(args.Freeze_epoch, args.UnFreeze_epoch + args.Freeze_epoch):
         set_optimizer_lr(optimizer, lr_scheduler_func_UnFreeze, epoch_now)
-        fit_one_epoch(model=model,
-                      optimizer=optimizer,
-                      epoch_now=epoch_now,
-                      epoch_Freeze=args.Freeze_epoch,
-                      epoch_all=args.Freeze_epoch + args.UnFreeze_epoch,
-                      gen=gen,
-                      gen_val=gen_val,
-                      save_dir=args.save_dir,
-                      cls_weights=cls_weights,
-                      device=device,
-                      loss_history=loss_history,
-                      num_classes=args.num_classes)
+        model = fit_one_epoch(model=model,
+                              optimizer=optimizer,
+                              epoch_now=epoch_now,
+                              epoch_Freeze=args.Freeze_epoch,
+                              epoch_all=args.Freeze_epoch + args.UnFreeze_epoch,
+                              gen=gen,
+                              gen_val=gen_val,
+                              save_dir=args.save_dir,
+                              cls_weights=cls_weights,
+                              device=device,
+                              loss_history=loss_history,
+                              num_classes=args.num_classes)
 
 
 if __name__ == '__main__':

@@ -177,5 +177,14 @@
 + Freeze_batch_size = 24,  UnFreeze_batch_size = 8
 + Freeze_epoch = 0, UnFreeze_epoch = 24
 + 384*384
-+ 重新划分，val per = 0.2
++ 重新划分，val per = 0.1
+
+#### Train_result
+
++ f_score = 0.743,  f_score_val = 0.766（去除背景类）
++ Score: 0.629
+
+#### problem
+
++ loss 扰动较大，感觉未训练完全
 

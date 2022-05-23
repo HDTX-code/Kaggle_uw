@@ -166,16 +166,10 @@
 
 ### Epoch 2
 
-#### Change
+#### contrast
 
-+ 扩充数据集，删除误标的，但要保留大量的无标注数据集
-
-#### Train
-
-+ Optimizer =  Adam
-+ lr_decay_type = cos, max_lr = 1e-4, min_lr = 1e-6
-+ Freeze_batch_size = 24,  UnFreeze_batch_size = 8
-+ Freeze_epoch = 0, UnFreeze_epoch = 24
-+ 384*384
-+ 重新划分，val per = 0.2
++ resnet50+无乱标注数据+有权值+384*384+val_0.832 = score 0.681
++ resnet50+无乱标注数据+无权值+384*384+val_0.768 = score 0.647
++ resnet50+所有数据+无权值+256*256+val_0.768 = score 0.768
++ resnet50+无乱标注无零标注数据+有权值+384*384+val_0.890 = score 0.684
 

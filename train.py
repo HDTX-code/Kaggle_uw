@@ -60,19 +60,19 @@ def go_train(args):
     # -------------------------------------------------------------------#
     #   判断当前batch_size，自适应调整学习率
     # -------------------------------------------------------------------#
-    nbs = 16
-    lr_limit_max = 1e-4 if args.optimizer_type == 'adam' else 1e-1
-    lr_limit_min = 1e-4 if args.optimizer_type == 'adam' else 5e-4
-    Init_lr_fit = min(max(args.UnFreeze_batch_size / nbs * args.Init_lr, lr_limit_min), lr_limit_max)
-    Min_lr_fit = min(max(args.UnFreeze_batch_size / nbs * args.Init_lr * 0.01, lr_limit_min * 1e-2),
-                     lr_limit_max * 1e-2)
+    # nbs = 16
+    # lr_limit_max = 1e-5 if args.optimizer_type == 'adam' else 1e-1
+    # lr_limit_min = 1e-4 if args.optimizer_type == 'adam' else 5e-4
+    # Init_lr_fit = min(max(args.UnFreeze_batch_size / nbs * args.Init_lr, lr_limit_min), lr_limit_max)
+    # Min_lr_fit = min(max(args.UnFreeze_batch_size / nbs * args.Init_lr * 0.01, lr_limit_min * 1e-2),
+    #                  lr_limit_max * 1e-2)
     # ---------------------------------------#
     #   根据optimizer_type选择优化器
     # ---------------------------------------#
     optimizer = {
-        'adam': optim.Adam(model.parameters(), Init_lr_fit, betas=(args.momentum, 0.999),
+        'adam': optim.Adam(model.parameters(), args.Init_lr, betas=(args.momentum, 0.999),
                            weight_decay=args.weight_decay),
-        'sgd': optim.SGD(model.parameters(), Init_lr_fit, momentum=args.momentum, nesterov=True,
+        'sgd': optim.SGD(model.parameters(), args.Init_lr, momentum=args.momentum, nesterov=True,
                          weight_decay=args.weight_decay)
     }[args.optimizer_type]
 
@@ -84,7 +84,7 @@ def go_train(args):
         # ---------------------------------------#
         #   获得学习率下降的公式
         # ---------------------------------------#
-        lr_scheduler_func_Freeze = get_lr_scheduler(args.lr_decay_type, Init_lr_fit, Min_lr_fit, args.Freeze_epoch)
+        lr_scheduler_func_Freeze = get_lr_scheduler(args.lr_decay_type, args.Init_lr, args.Init_lr*0.01, args.Freeze_epoch)
         print("-----------------Start Freeze Train-----------------")
 
         gen = DataLoader(train_dataset, shuffle=True, batch_size=args.Freeze_batch_size,
@@ -118,7 +118,7 @@ def go_train(args):
     # ---------------------------------------#
     #   获得学习率下降的公式
     # ---------------------------------------#
-    lr_scheduler_func_UnFreeze = get_lr_scheduler(args.lr_decay_type, Init_lr_fit, Min_lr_fit, args.UnFreeze_epoch)
+    lr_scheduler_func_UnFreeze = get_lr_scheduler(args.lr_decay_type, args.Init_lr, args.Init_lr*0.01, args.UnFreeze_epoch)
     gen = DataLoader(train_dataset, shuffle=True, batch_size=args.UnFreeze_batch_size,
                      num_workers=args.num_workers)
     if args.val_csv_path is not None:

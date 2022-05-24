@@ -108,7 +108,8 @@ def go_train(args):
                                   cls_weights=cls_weights,
                                   device=device,
                                   loss_history=loss_history,
-                                  num_classes=args.num_classes)
+                                  num_classes=args.num_classes,
+                                  interval=args.save_interval)
     # ---------------------------------------#
     #   开始冻结训练
     # ---------------------------------------#
@@ -138,7 +139,8 @@ def go_train(args):
                               cls_weights=cls_weights,
                               device=device,
                               loss_history=loss_history,
-                              num_classes=args.num_classes)
+                              num_classes=args.num_classes,
+                              interval=args.save_interval)
 
 
 if __name__ == '__main__':
@@ -146,6 +148,7 @@ if __name__ == '__main__':
     parser.add_argument('--backbone', type=str, default='resnet50', help='特征网络选择，默认resnet50')
     parser.add_argument('--num_classes', type=int, default=3, help='种类数量')
     parser.add_argument('--save_dir', type=str, default="./logs", help='存储文件夹位置')
+    parser.add_argument('--save_interval', type=int, default=3, help='存储间隔')
     parser.add_argument('--model_path', type=str, default="", help='模型参数位置')
     parser.add_argument('--w', type=int, default=512, help='宽')
     parser.add_argument('--h', type=int, default=512, help='高')

@@ -166,12 +166,6 @@
 
 ### Epoch 2
 
-#### contrast
-
-+ resnet50+无乱标注数据+有权值+384*384+val_0.832 = score 0.681
-+ resnet50+无乱标注数据+无权值+384*384+val_0.768 = score 0.647
-+ resnet50+所有数据+无权值+256*256+val_0.768 = score 0.768
-+ resnet50+无乱标注无零标注数据+有权值+384*384+val_0.890 = score 0.684
 #### Train
 
 + Optimizer =  Adam
@@ -189,4 +183,12 @@
 #### problem
 
 + loss 扰动较大，感觉未训练完全
+
+#### contrast
+
++ resnet50+无乱标注数据+有权值+384*384+val_0.832 = score 0.681
++ resnet50+无乱标注数据+无权值+384*384+val_0.768 = score 0.647
++ resnet50+所有数据+无权值+256*256+val_0.768 = score 0.768
++ resnet50+无乱标注无零标注数据+有权值+384*384+val_0.890 = score 0.684
++ resnet50+所有数据+有权值+256*256+val_0.770 = score 0.788
 

@@ -20,7 +20,13 @@ def go_pre(args):
     print("")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # 特征网络
-    print("backbone = " + args.backbone)
+    print("backbone = ", end="")
+    print(args.backbone)
+    print("")
+    # 权值文件
+    print("model_path = ", end="")
+    print(args.model_path)
+    print("")
     # 检查保存文件夹是否存在
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)

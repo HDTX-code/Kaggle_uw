@@ -80,14 +80,15 @@ def go_pre(args):
                 ow = ow.cpu().numpy()
                 oh = oh.cpu().numpy()
                 label_item = label_item.cpu().numpy()
-                if class_df.loc[label_item, "class_predict"] == 0.0:
-                    output = torch.dstack([torch.ones([png.shape[0], png.shape[0], png.shape[0], 1]), torch.zeros([png.shape[0], png.shape[0], png.shape[0], 1])])
-                    output = torch.dstack([output, output, output])
-                elif class_df.loc[label_item, "class_predict"] == 1.0:
-                    output = model_list[1](png)
-                elif class_df.loc[label_item, "class_predict"] == 2.0:
-                    output = model_list[2](png)
-                for item_batch in range(output.shape[0]):
+                for item_batch in range(label_item.shape[0]):
+                    if class_df.loc[label_item[item_batch], "class_predict"] == 0.0:
+                        output = torch.dstack([torch.ones([png.shape[0], png.shape[0], png.shape[0], 1]),
+                                               torch.zeros([png.shape[0], png.shape[0], png.shape[0], 1])])
+                        output = torch.dstack([output, output, output])
+                    elif class_df.loc[label_item[item_batch], "class_predict"] == 1.0:
+                        output = model_list[1](png)
+                    elif class_df.loc[label_item[item_batch], "class_predict"] == 2.0:
+                        output = model_list[2](png)
                     pr = torch.dstack([F.softmax(output[item_batch].permute(1, 2, 0)[..., 2 * i:2 * (i + 1)],
                                                  dim=-1) for i in range(args.num_classes)]).cpu().numpy()
                     pr = np.concatenate([np.expand_dims(pr[..., 2 * i:2 * (i + 1)].argmax(axis=-1),
@@ -96,7 +97,7 @@ def go_pre(args):
                             int((args.w - nw[item_batch]) // 2): int((args.w - nw[item_batch]) // 2 + nw[item_batch]),
                             :]
                     pr = cv2.resize(pr, (ow[item_batch], oh[item_batch]), interpolation=cv2.INTER_NEAREST)
-                    sub_df = decode_output(pr, sub_df, class_df.loc[label_item, "id"])
+                    sub_df = decode_output(pr, sub_df, class_df.loc[label_item[item_batch], "id"])
                     # cv2.imwrite(os.path.join(args.save_dir, id_dict[label[item_batch]]), pr)
                     # png_raw = cv2.imread(os.path.join(args.pic_path, id_dict[label[item_batch]]))
                     # png_label = cv2.imread(os.path.join("./data/label_pic", id_dict[label[item_batch]]))*255

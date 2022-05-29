@@ -29,57 +29,67 @@ def go_pre(args):
     class_dict = dict(zip([0, 1, 2], ['large_bowel', 'small_bowel', 'stomach']))
 
     # 加载模型
-    model = Unet(num_classes=args.num_classes * 2, pretrained=False, backbone=args.backbone).eval()
-
-    if args.model_path != '':
-        model.load_state_dict(torch.load(args.model_path, map_location=device))
+    model_list = []
+    assert len(args.backbone) == len(args.model_path)
+    for item in range(len(args.backbone)):
+        model = Unet(num_classes=args.num_classes * 2, pretrained=False, backbone=args.backbone[item]).eval()
+        if args.model_path[item] != '':
+            model.load_state_dict(torch.load(args.model_path, map_location=device))
+        model_list.append(model)
 
     # 加载dataloader
-    data_list = []
-    if os.path.exists(os.path.join(args.pic_path, 'test')):
-        path_root = os.path.join(args.pic_path, 'test')
-        df_ssub = pd.read_csv(os.path.join(args.pic_path, 'sample_submission.csv'))
-        del df_ssub['predicted']
-        for item_case in os.listdir(path_root):
-            for item_day in os.listdir(os.path.join(path_root, item_case)):
-                path = os.path.join(path_root, item_case, item_day, 'scans')
-                data_list.extend(map(lambda x: os.path.join(path, x), os.listdir(path)))
-    else:
-        path_root = os.path.join(args.pic_path, 'train')
-        df_ssub = pd.read_csv(os.path.join(args.pic_path, 'train.csv'))
-        del df_ssub['segmentation']
-        for item_case in os.listdir(path_root):
-            for item_day in os.listdir(os.path.join(path_root, item_case)):
-                path = os.path.join(path_root, item_case, item_day, 'scans')
-                data_list.extend(map(lambda x: os.path.join(path, x), os.listdir(path)))
-            break
+    # data_list = []
+    # if os.path.exists(os.path.join(args.pic_path, 'test')):
+    #     path_root = os.path.join(args.pic_path, 'test')
+    #     df_ssub = pd.read_csv(os.path.join(args.pic_path, 'sample_submission.csv'))
+    #     del df_ssub['predicted']
+    #     for item_case in os.listdir(path_root):
+    #         for item_day in os.listdir(os.path.join(path_root, item_case)):
+    #             path = os.path.join(path_root, item_case, item_day, 'scans')
+    #             data_list.extend(map(lambda x: os.path.join(path, x), os.listdir(path)))
+    # else:
+    #     path_root = os.path.join(args.pic_path, 'train')
+    #     df_ssub = pd.read_csv(os.path.join(args.pic_path, 'train.csv'))
+    #     del df_ssub['segmentation']
+    #     for item_case in os.listdir(path_root):
+    #         for item_day in os.listdir(os.path.join(path_root, item_case)):
+    #             path = os.path.join(path_root, item_case, item_day, 'scans')
+    #             data_list.extend(map(lambda x: os.path.join(path, x), os.listdir(path)))
+    #         break
+    class_df = pd.read_csv(args.class_df_path)
 
-    id_dict = dict(zip(range(len(data_list)), data_list))
-    dataset = TestDataset(data_list, id_dict, [args.h, args.w], args.is_pre)
+    # id_dict = dict(zip(range(len(data_list)), data_list))
+    dataset = TestDataset(class_df, [args.h, args.w], args.is_pre)
     gen = DataLoader(dataset, shuffle=False, batch_size=args.batch_size, num_workers=args.num_workers)
 
     # 开始预测
     with tqdm(total=len(gen), mininterval=0.3) as pbar:
         with torch.no_grad():
-            model.eval().to(device)
-            for item, (png, label, nw, nh, oh, ow) in enumerate(gen):
+            for model in model_list:
+                model.eval().to(device)
+            for item, (png, label_item, nw, nh, oh, ow) in enumerate(gen):
                 png = png.type(torch.FloatTensor).to(device)
-                output = model(png)
                 nw = nw.cpu().numpy()
                 nh = nh.cpu().numpy()
                 ow = ow.cpu().numpy()
                 oh = oh.cpu().numpy()
-                label = label.cpu().numpy()
+                label_item = label_item.cpu().numpy()
+                if class_df.loc[label_item, "class_predict"] == 0.0:
+                    output = torch.zeros([png.shape[0], png.shape[0], png.shape[0], args.num_classes * 2])
+                elif class_df.loc[label_item, "class_predict"] == 1.0:
+                    output = model_list[1](png)
+                elif class_df.loc[label_item, "class_predict"] == 2.0:
+                    output = model_list[2](png)
                 for item_batch in range(output.shape[0]):
                     pr = torch.dstack([F.softmax(output[item_batch].permute(1, 2, 0)[..., 2 * i:2 * (i + 1)],
                                                  dim=-1) for i in range(args.num_classes)]).cpu().numpy()
                     pr = np.concatenate([np.expand_dims(pr[..., 2 * i:2 * (i + 1)].argmax(axis=-1),
                                                         -1) for i in range(args.num_classes)], axis=-1) * 255
                     pr = pr[int((args.h - nh[item_batch]) // 2): int((args.h - nh[item_batch]) // 2 + nh[item_batch]),
-                         int((args.w - nw[item_batch]) // 2): int((args.w - nw[item_batch]) // 2 + nw[item_batch]),
-                         :]
+                            int((args.w - nw[item_batch]) // 2): int((args.w - nw[item_batch]) // 2 + nw[item_batch]),
+                            :]
                     pr = cv2.resize(pr, (ow[item_batch], oh[item_batch]), interpolation=cv2.INTER_NEAREST)
-                    sub_df = decode_output(pr, sub_df, id_dict[label[item_batch]][:-4])
+                    sub_df = decode_output(pr, sub_df, class_df.loc[label_item, "id"])
                     # cv2.imwrite(os.path.join(args.save_dir, id_dict[label[item_batch]]), pr)
                     # png_raw = cv2.imread(os.path.join(args.pic_path, id_dict[label[item_batch]]))
                     # png_label = cv2.imread(os.path.join("./data/label_pic", id_dict[label[item_batch]]))*255
@@ -89,11 +99,9 @@ def go_pre(args):
                     # cv2.imwrite(os.path.join('./data/test/label', id_dict[label[item_batch]]), overlapping_label)
                 pbar.update(1)
     sub_df['class'] = sub_df['class'].apply(lambda x: class_dict[x])
-    sub_df['id'] = sub_df['id'].apply(lambda x: str(x.split("/")[5]) + "_" + str(
-        x.split("/")[-1].split("_")[0] + '_' + x.split("/")[-1].split("_")[1]))
-    if not os.path.exists(os.path.join(args.pic_path, 'test')):
-        sub_df = df_ssub.merge(sub_df, on=['id', 'class'])
-    else:
+    if os.path.exists(os.path.join(args.pic_path, 'test')):
+        df_ssub = pd.read_csv(os.path.join(args.pic_path, 'sample_submission.csv'))
+        del df_ssub['predicted']
         sub_df = df_ssub.merge(sub_df, on=['id', 'class'])
         assert len(sub_df) == len(df_ssub)
     sub_df[['id', 'class', 'predicted']].to_csv(os.path.join(args.save_dir, 'submission.csv'), index=False)
@@ -101,11 +109,10 @@ def go_pre(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='提交设置')
-    parser.add_argument('--backbone', type=str, default='resnet50', help='特征网络选择，默认resnet50')
+    parser.add_argument('--backbone', type=str, nargs='+', required=True, help='特征网络选择，默认resnet50')
     parser.add_argument('--num_classes', type=int, default=3, help='种类数量')
     parser.add_argument('--save_dir', type=str, default="./", help='存储文件夹位置')
-    parser.add_argument('--model_path', type=str,
-                        default="../input/uw-weigths/ep024-f_score0.890-val_f_score0.879.pth", help='模型参数位置')
+    parser.add_argument('--model_path', type=str, nargs='+', required=True, help='模型参数位置')
     parser.add_argument('--pic_path', type=str, default=r"../input/uw-madison-gi-tract-image-segmentation",
                         help="pic文件夹位置")
     parser.add_argument('--num_workers', type=int, default=2, help="num_workers")

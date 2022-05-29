@@ -86,9 +86,9 @@ def go_pre(args):
                                                torch.zeros([png.shape[0], png.shape[0], png.shape[0], 1])])
                         output = torch.dstack([output, output, output])
                     elif class_df.loc[label_item[item_batch], "class_predict"] == 1.0:
-                        output = model_list[1](png)
+                        output = model_list[0](png)
                     elif class_df.loc[label_item[item_batch], "class_predict"] == 2.0:
-                        output = model_list[2](png)
+                        output = model_list[1](png)
                     pr = torch.dstack([F.softmax(output[item_batch].permute(1, 2, 0)[..., 2 * i:2 * (i + 1)],
                                                  dim=-1) for i in range(args.num_classes)]).cpu().numpy()
                     pr = np.concatenate([np.expand_dims(pr[..., 2 * i:2 * (i + 1)].argmax(axis=-1),

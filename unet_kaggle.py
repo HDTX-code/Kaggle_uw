@@ -115,6 +115,8 @@ if __name__ == '__main__':
     parser.add_argument('--model_path', type=str, nargs='+', required=True, help='模型参数位置')
     parser.add_argument('--pic_path', type=str, default=r"../input/uw-madison-gi-tract-image-segmentation",
                         help="pic文件夹位置")
+    parser.add_argument('--class_df_path', type=str,
+                        default=r"D:\work\project\Kaggle_uw\data\weights\class_weights\csv\val_csv.csv", help='预测csv路径')
     parser.add_argument('--num_workers', type=int, default=2, help="num_workers")
     parser.add_argument('--is_pre', default=False, action='store_true', help="是否预处理")
     parser.add_argument('--batch_size', type=int, default=64, help="batch_size")

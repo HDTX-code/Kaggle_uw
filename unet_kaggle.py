@@ -109,7 +109,7 @@ if __name__ == '__main__':
     parser.add_argument('--pic_path', type=str, default=r"../input/uw-madison-gi-tract-image-segmentation",
                         help="pic文件夹位置")
     parser.add_argument('--num_workers', type=int, default=2, help="num_workers")
-    parser.add_argument('--is_pre', type=bool, default=True, help="是否预处理")
+    parser.add_argument('--is_pre', default=False, action='store_true', help="是否预处理")
     parser.add_argument('--sub_path', type=str,
                         default='../input/uw-madison-gi-tract-image-segmentation/sample_submission.csv', help="提交样式csv")
     parser.add_argument('--batch_size', type=int, default=64, help="batch_size")

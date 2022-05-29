@@ -1,4 +1,5 @@
 import argparse
+import copy
 import os
 
 import cv2
@@ -65,7 +66,7 @@ def go_pre(args):
     class_df = pd.read_csv(args.class_df_path)
 
     # id_dict = dict(zip(range(len(data_list)), data_list))
-    dataset = TestDataset(class_df, [args.h, args.w], args.is_pre)
+    dataset = TestDataset(copy.deepcopy(class_df), [args.h, args.w], args.is_pre)
     gen = DataLoader(dataset, shuffle=False, batch_size=args.batch_size, num_workers=args.num_workers)
 
     # 开始预测

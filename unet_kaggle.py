@@ -40,7 +40,7 @@ def go_pre(args):
     for item in range(len(args.backbone)):
         model = Unet(num_classes=args.num_classes * 2, pretrained=False, backbone=args.backbone[item]).eval()
         if args.model_path[item] != '':
-            model.load_state_dict(torch.load(args.model_path, map_location=device))
+            model.load_state_dict(torch.load(args.model_path[item], map_location=device))
         model_list.append(model)
 
     # 加载dataloader
@@ -81,7 +81,8 @@ def go_pre(args):
                 oh = oh.cpu().numpy()
                 label_item = label_item.cpu().numpy()
                 if class_df.loc[label_item, "class_predict"] == 0.0:
-                    output = torch.zeros([png.shape[0], png.shape[0], png.shape[0], args.num_classes * 2])
+                    output = torch.dstack([torch.ones([png.shape[0], png.shape[0], png.shape[0], 1]), torch.zeros([png.shape[0], png.shape[0], png.shape[0], 1])])
+                    output = torch.dstack([output, output, output])
                 elif class_df.loc[label_item, "class_predict"] == 1.0:
                     output = model_list[1](png)
                 elif class_df.loc[label_item, "class_predict"] == 2.0:

@@ -88,10 +88,10 @@ def go_pre(args):
                         output = torch.dstack([output, output, output])
                         # output = model_list[0](png)
                     elif class_df.loc[label_item[item_batch], "class_predict"] == 1.0:
-                        output = torch.squeeze(model_list[0](torch.unsqueeze(png[item_batch, ...], 0)))
+                        output = model_list[0](torch.unsqueeze(png[item_batch, ...], 0))
                     elif class_df.loc[label_item[item_batch], "class_predict"] == 2.0:
-                        output = torch.squeeze(model_list[1](torch.unsqueeze(png[item_batch, ...], 0)))
-                    pr = torch.dstack([F.softmax(output.permute(1, 2, 0)[..., 2 * i:2 * (i + 1)],
+                        output = model_list[1](torch.unsqueeze(png[item_batch, ...], 0))
+                    pr = torch.dstack([F.softmax(output[0, ...].permute(1, 2, 0)[..., 2 * i:2 * (i + 1)],
                                                  dim=-1) for i in range(args.num_classes)]).cpu().numpy()
                     pr = np.concatenate([np.expand_dims(pr[..., 2 * i:2 * (i + 1)].argmax(axis=-1),
                                                         -1) for i in range(args.num_classes)], axis=-1) * 255

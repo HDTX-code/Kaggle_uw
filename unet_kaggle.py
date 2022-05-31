@@ -11,7 +11,7 @@ from tqdm import tqdm
 import torch.nn.functional as F
 
 from nets import Unet
-from utils import TestDataset, decode_output, get_model
+from utils import TestDataset, decode_output, get_model, make_predict_csv
 
 
 def go_pre(args):
@@ -61,7 +61,7 @@ def go_pre(args):
     #             path = os.path.join(path_root, item_case, item_day, 'scans')
     #             data_list.extend(map(lambda x: os.path.join(path, x), os.listdir(path)))
     #         break
-    class_df = pd.read_csv(args.class_df_path)
+    class_df = make_predict_csv(args.pic_path, args.val_csv_path)
 
     # id_dict = dict(zip(range(len(data_list)), data_list))
     dataset = TestDataset(copy.deepcopy(class_df), [args.h, args.w], args.is_pre)
@@ -82,6 +82,7 @@ def go_pre(args):
                 output_class = model_list[0](png)
                 for item_batch in range(label_item.shape[0]):
                     pr = output_class[item_batch].argmax().cpu().numpy()
+                    class_df.loc[label_item[item_batch], "class_predict"] = pr
                     if pr == 0.0:
                         output = torch.dstack([torch.ones([png.shape[0], png.shape[0], png.shape[0], 1]),
                                                torch.zeros([png.shape[0], png.shape[0], png.shape[0], 1])])
@@ -114,6 +115,8 @@ def go_pre(args):
         del df_ssub['predicted']
         sub_df = df_ssub.merge(sub_df, on=['id', 'class'])
         assert len(sub_df) == len(df_ssub)
+    else:
+        class_df.to_csv(os.path.join(args.save_dir, 'class_predict.csv'), index=False)
     sub_df[['id', 'class', 'predicted']].to_csv(os.path.join(args.save_dir, 'submission.csv'), index=False)
 
 
@@ -125,7 +128,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_path', type=str, nargs='+', required=True, help='模型参数位置')
     parser.add_argument('--pic_path', type=str, default=r"../input/uw-madison-gi-tract-image-segmentation",
                         help="pic文件夹位置")
-    parser.add_argument('--class_df_path', type=str,
+    parser.add_argument('--val_csv_path', type=str,
                         default=r"D:\work\project\Kaggle_uw\data\weights\class_weights\csv\val_csv.csv", help='预测csv路径')
     parser.add_argument('--num_workers', type=int, default=2, help="num_workers")
     parser.add_argument('--is_pre', default=False, action='store_true', help="是否预处理")

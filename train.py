@@ -8,7 +8,7 @@ from torch import optim
 from torch.utils.data import DataLoader
 
 from nets import Unet, get_lr_scheduler, set_optimizer_lr
-from utils import UNetDataset, fit_one_epoch, LossHistory, load_model
+from utils import UNetDataset, fit_one_epoch, LossHistory, load_model, get_model
 
 
 def go_train(args):
@@ -34,16 +34,7 @@ def go_train(args):
 
     # 加载模型
 
-    model = Unet(num_classes=args.num_classes * 2, pretrained=False, backbone=args.backbone).train()
-
-    if args.model_path != '':
-        # print('Load weights {}.'.format(args.model_path))
-        # model_dict = model.state_dict()
-        # pretrained_dict = torch.load(args.model_path, map_location=device)
-        # pretrained_dict = {k: v for k, v in pretrained_dict.items() if np.shape(model_dict[k]) == np.shape(v)}
-        # model_dict.update(pretrained_dict)
-        # model.load_state_dict(model_dict)
-        model = load_model(model, args.model_path)
+    model = get_model(args.backbone, args.model_path, args.num_classes).train()
 
     # 生成loss_history
     loss_history = LossHistory(args.save_dir, model, input_shape=[args.h, args.w])

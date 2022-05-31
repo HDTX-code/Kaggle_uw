@@ -11,7 +11,7 @@ from tqdm import tqdm
 import torch.nn.functional as F
 
 from nets import Unet
-from utils import TestDataset, decode_output
+from utils import TestDataset, decode_output, get_model
 
 
 def go_pre(args):
@@ -39,9 +39,7 @@ def go_pre(args):
     model_list = []
     assert len(args.backbone) == len(args.model_path)
     for item in range(len(args.backbone)):
-        model = Unet(num_classes=args.num_classes * 2, pretrained=False, backbone=args.backbone[item]).eval()
-        if args.model_path[item] != '':
-            model.load_state_dict(torch.load(args.model_path[item], map_location=device))
+        model = get_model(args.backbone[item], args.model_path[item], args.num_classes).eval()
         model_list.append(model)
 
     # 加载dataloader
@@ -81,16 +79,18 @@ def go_pre(args):
                 ow = ow.cpu().numpy()
                 oh = oh.cpu().numpy()
                 label_item = label_item.cpu().numpy()
+                output_class = model_list[0](png)
                 for item_batch in range(label_item.shape[0]):
-                    if class_df.loc[label_item[item_batch], "class_predict"] == 0.0:
+                    pr = output_class[item_batch].argmax().cpu().numpy()
+                    if pr == 0.0:
                         output = torch.dstack([torch.ones([png.shape[0], png.shape[0], png.shape[0], 1]),
                                                torch.zeros([png.shape[0], png.shape[0], png.shape[0], 1])])
                         output = torch.dstack([output, output, output])
                         # output = model_list[0](png)
-                    elif class_df.loc[label_item[item_batch], "class_predict"] == 1.0:
-                        output = model_list[0](torch.unsqueeze(png[item_batch, ...], 0))
-                    elif class_df.loc[label_item[item_batch], "class_predict"] == 2.0:
+                    elif pr == 1.0:
                         output = model_list[1](torch.unsqueeze(png[item_batch, ...], 0))
+                    elif pr == 2.0:
+                        output = model_list[2](torch.unsqueeze(png[item_batch, ...], 0))
                     pr = torch.dstack([F.softmax(output[0, ...].permute(1, 2, 0)[..., 2 * i:2 * (i + 1)],
                                                  dim=-1) for i in range(args.num_classes)]).cpu().numpy()
                     pr = np.concatenate([np.expand_dims(pr[..., 2 * i:2 * (i + 1)].argmax(axis=-1),

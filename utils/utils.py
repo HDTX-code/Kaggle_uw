@@ -11,6 +11,9 @@ from PIL import Image
 #   将图像转换成RGB图像，防止灰度图在预测时报错。
 #   代码仅仅支持RGB图像的预测，所有其它类型的图像都会转化成RGB
 # ---------------------------------------------------------#
+from nets import ResNet18, BasicBlock, Unet
+
+
 def cvtColor(image):
     if len(np.shape(image)) == 3 and np.shape(image)[2] == 3:
         return image
@@ -148,3 +151,13 @@ def decode_output(pr, data_csv, label):
         else:
             data_csv.loc[len(data_csv)] = [label, item_type, ""]
     return data_csv
+
+
+def get_model(backbone, model_path, num_classes):
+    if backbone == 'resnet18':
+        model = ResNet18(BasicBlock, num_classes=num_classes)
+    else:
+        model = Unet(num_classes=num_classes * 2, pretrained=False, backbone=backbone)
+    if model_path != "":
+        model = load_model(model, model_path)
+    return model

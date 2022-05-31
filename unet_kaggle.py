@@ -28,6 +28,10 @@ def go_pre(args):
     print("model_path = ", end="")
     print(args.model_path)
     print("")
+    # 是否预处理
+    print("is_pre: ", end="")
+    print(args.is_pre)
+    print("")
     # 检查保存文件夹是否存在
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)

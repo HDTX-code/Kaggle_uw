@@ -191,4 +191,11 @@
 + resnet50+所有数据+无权值+256*256+val_0.768 = score 0.768
 + resnet50+无乱标注无零标注数据+有权值+384*384+val_0.890 = score 0.684
 + resnet50+所有数据+有权值+256*256+val_0.770 = score 0.788
++ resnet50+所有数据+有权值+512*512+val_0.734 = score 0.797
++ resnet18分类模型(acc:0.98) + resnet50 nobadseg(acc:0.79) + resnet50 nobadseg nozerosseg(acc:0.879) + 384*384 = score 0.799
 
+## V4
+### Epoch 1
+#### Change
++ 采用分类模型，0类表示无标注，1类表示正常标注，2类表示黑标注，分类器采用res18
++ backbone换成efficientnet b6

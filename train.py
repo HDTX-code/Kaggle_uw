@@ -18,8 +18,18 @@ def go_train(args):
     print("")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+    # backbone
     print("backbone = " + args.backbone)
+
+    # 预训练
+    print("pretrained: ", end="")
+    print(args.pretrained)
+    print("")
+
+    # 最大lr
     print("Init_lr = " + str(args.Init_lr))
+
+    # 权重
     if args.cls_weights is None:
         cls_weights = np.ones([args.num_classes + 1], np.float32)
     else:
@@ -33,8 +43,7 @@ def go_train(args):
         os.makedirs(args.save_dir)
 
     # 加载模型
-
-    model = get_model(args.backbone, args.model_path, args.num_classes).train()
+    model = get_model(args.backbone, args.model_path, args.num_classes, args.pretrained).train()
 
     # 生成loss_history
     loss_history = LossHistory(args.save_dir, model, input_shape=[args.h, args.w])
@@ -156,6 +165,7 @@ if __name__ == '__main__':
     parser.add_argument('--Freeze_epoch', type=int, default=3, help="冻结训练轮次")
     parser.add_argument('--UnFreeze_epoch', type=int, default=6, help="解冻训练轮次")
     parser.add_argument('--cls_weights', nargs='+', type=float, default=None, help='交叉熵loss系数')
+    parser.add_argument('--pretrained', default=False, action='store_true', help="是否预训练")
     args = parser.parse_args()
 
     go_train(args)

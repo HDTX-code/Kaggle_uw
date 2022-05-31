@@ -11,6 +11,8 @@ from PIL import Image
 #   将图像转换成RGB图像，防止灰度图在预测时报错。
 #   代码仅仅支持RGB图像的预测，所有其它类型的图像都会转化成RGB
 # ---------------------------------------------------------#
+from efficientunet import get_efficientunet_b0, get_efficientunet_b7, get_efficientunet_b6, get_efficientunet_b5, \
+    get_efficientunet_b4, get_efficientunet_b3, get_efficientunet_b2, get_efficientunet_b1
 from nets import ResNet18, BasicBlock, Unet
 
 
@@ -104,6 +106,35 @@ def download_weights(backbone, model_dir="./model_data"):
     load_state_dict_from_url(url, model_dir)
 
 
+# ---------------------------------------------------#
+#   加载模型
+# ---------------------------------------------------#
+def get_model(backbone, model_path, num_classes, pretrained):
+    if backbone == 'resnet18':
+        model = ResNet18(BasicBlock, num_classes=num_classes)
+    elif backbone == 'efficientunet_b0':
+        model = get_efficientunet_b0(out_channels=num_classes * 2, concat_input=True, pretrained=pretrained)
+    elif backbone == 'efficientunet_b1':
+        model = get_efficientunet_b1(out_channels=num_classes * 2, concat_input=True, pretrained=pretrained)
+    elif backbone == 'efficientunet_b2':
+        model = get_efficientunet_b2(out_channels=num_classes * 2, concat_input=True, pretrained=pretrained)
+    elif backbone == 'efficientunet_b3':
+        model = get_efficientunet_b3(out_channels=num_classes * 2, concat_input=True, pretrained=pretrained)
+    elif backbone == 'efficientunet_b4':
+        model = get_efficientunet_b4(out_channels=num_classes * 2, concat_input=True, pretrained=pretrained)
+    elif backbone == 'efficientunet_b5':
+        model = get_efficientunet_b5(out_channels=num_classes * 2, concat_input=True, pretrained=pretrained)
+    elif backbone == 'efficientunet_b6':
+        model = get_efficientunet_b6(out_channels=num_classes * 2, concat_input=True, pretrained=pretrained)
+    elif backbone == 'efficientunet_b7':
+        model = get_efficientunet_b7(out_channels=num_classes * 2, concat_input=True, pretrained=pretrained)
+    else:
+        model = Unet(num_classes=num_classes * 2, pretrained=False, backbone=backbone)
+    if model_path != "":
+        model = load_model(model, model_path)
+    return model
+
+
 def load_model(model, model_path):
     print('Loading weights into state dict...')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -151,16 +182,6 @@ def decode_output(pr, data_csv, label):
         else:
             data_csv.loc[len(data_csv)] = [label, item_type, ""]
     return data_csv
-
-
-def get_model(backbone, model_path, num_classes):
-    if backbone == 'resnet18':
-        model = ResNet18(BasicBlock, num_classes=num_classes)
-    else:
-        model = Unet(num_classes=num_classes * 2, pretrained=False, backbone=backbone)
-    if model_path != "":
-        model = load_model(model, model_path)
-    return model
 
 
 def make_predict_csv(pic_path, val_csv_path):

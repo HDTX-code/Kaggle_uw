@@ -47,7 +47,7 @@ def go_pre(args):
     model_list = []
     assert len(args.backbone) == len(args.model_path)
     for item in range(len(args.backbone)):
-        model = get_model(args.backbone[item], args.model_path[item], args.num_classes).eval()
+        model = get_model(args.backbone[item], args.model_path[item], args.num_classes, args.pretrained).eval()
         model_list.append(model)
 
     # 获取预测csv
@@ -119,6 +119,7 @@ if __name__ == '__main__':
                         default=r"D:\work\project\Kaggle_uw\data\weights\class_weights\csv\val_csv.csv", help='预测csv路径')
     parser.add_argument('--num_workers', type=int, default=2, help="num_workers")
     parser.add_argument('--is_pre', default=False, action='store_true', help="是否预处理")
+    parser.add_argument('--pretrained', default=False, action='store_true', help="是否预训练")
     parser.add_argument('--batch_size', type=int, default=64, help="batch_size")
     parser.add_argument('--w', type=int, default=384, help='宽')
     parser.add_argument('--h', type=int, default=384, help='高')
